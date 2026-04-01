@@ -4,6 +4,7 @@
   "description": "Roam er en app for å samle og bevare reiseminner. Målet er å gi brukere et meningsfullt sted å dokumentere reisene sine, ikke bare gjennom bilder, men også gjennom historiene, stedene og følelsene bak dem.",
   "main": "index.js",
   "scripts": {
+    "start": "node --env-file=.env.local server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
