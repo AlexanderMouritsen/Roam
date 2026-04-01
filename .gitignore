@@ -1,0 +1,7 @@
+# Local dev context 
+.local/
+
+# Ignore environment variables
+.env.local
+# Ignore node modules
+node_modules/
