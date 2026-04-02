@@ -3,21 +3,31 @@
 -- ===========================================
 -- Run this in Supabase SQL Editor to set up the database
 -- 
--- Tables: profiles, trips, activities, photos, visited_countries, bucket_list
+-- Tables: countries, profiles, trips, activities, photos, visited_countries, bucket_list
 -- Includes: triggers for auto-updating timestamps, RLS policies for security
 
 -- ===========================================
 -- TABLES
 -- ===========================================
 
+-- Countries: canonical list of all countries (reference data)
+create table countries (
+  code text primary key,
+  name text not null,
+  continent text not null,
+  flag_url text
+);
+
+create index countries_continent_idx on countries(continent);
+
 -- Profiles: extends Supabase auth.users with app-specific data
 create table profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  username text unique not null,
+  username text unique,
   display_name text,
   avatar_url text,
   bio text,
-  home_country text,
+  home_country text references countries(code),
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -57,6 +67,7 @@ create table activities (
 
 create index activities_trip_id_idx on activities(trip_id);
 create index activities_user_id_idx on activities(user_id);
+create index activities_start_datetime_idx on activities(start_datetime desc);
 
 -- Photos: images linked to trips or activities
 create table photos (
@@ -79,7 +90,7 @@ create index photos_user_id_idx on photos(user_id);
 create table visited_countries (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
-  country_code text not null,
+  country_code text not null references countries(code),
   first_visit date,
   notes text,
   created_at timestamptz default now(),
@@ -92,7 +103,7 @@ create index visited_countries_user_id_idx on visited_countries(user_id);
 create table bucket_list (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
-  country_code text not null,
+  country_code text not null references countries(code),
   place_name text,
   priority text not null default 'medium' check (priority in ('high', 'medium', 'low')),
   notes text,
@@ -114,7 +125,8 @@ begin
   new.updated_at = now();
   return new;
 end;
-$$ language plpgsql;
+$$ language plpgsql
+set search_path = pg_catalog, public;
 
 create trigger profiles_updated_at
   before update on profiles
@@ -128,15 +140,16 @@ create trigger activities_updated_at
   before update on activities
   for each row execute function update_updated_at();
 
--- Auto-create profile when user signs up
+-- Auto-create profile when user signs up (username set later by user)
 create or replace function create_profile_on_signup()
 returns trigger as $$
 begin
-  insert into profiles (id, username)
-  values (new.id, split_part(new.email, '@', 1));
+  insert into profiles (id)
+  values (new.id);
   return new;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer
+set search_path = pg_catalog, public;
 
 create trigger on_auth_user_created
   after insert on auth.users
@@ -153,6 +166,11 @@ alter table activities enable row level security;
 alter table photos enable row level security;
 alter table visited_countries enable row level security;
 alter table bucket_list enable row level security;
+alter table countries enable row level security;
+
+-- Countries: public read (reference data)
+create policy "Countries are viewable by everyone"
+  on countries for select using (true);
 
 -- Profiles: public read, owner write
 create policy "Profiles are viewable by everyone"
@@ -194,6 +212,9 @@ create policy "Users can view own photos"
 create policy "Users can upload own photos"
   on photos for insert with check (auth.uid() = user_id);
 
+create policy "Users can update own photos"
+  on photos for update using (auth.uid() = user_id);
+
 create policy "Users can delete own photos"
   on photos for delete using (auth.uid() = user_id);
 
@@ -203,6 +224,9 @@ create policy "Users can view own visited countries"
 
 create policy "Users can add visited countries"
   on visited_countries for insert with check (auth.uid() = user_id);
+
+create policy "Users can update visited countries"
+  on visited_countries for update using (auth.uid() = user_id);
 
 create policy "Users can remove visited countries"
   on visited_countries for delete using (auth.uid() = user_id);
