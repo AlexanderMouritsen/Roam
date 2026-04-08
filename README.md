@@ -24,7 +24,7 @@ Roam er en app for å samle og bevare reiseminner. Målet er å gi brukere et me
 
 ## Datamodell
 
-Databasen har 6 tabeller. Full SQL ligger i `db/roam-supabase.sql`.
+Databasen har 7 tabeller. Full SQL ligger i `db/roam-supabase.sql`.
 
 ![Database diagram](docs/Roam-dbschema.png)
 
