@@ -24,7 +24,7 @@ Roam er en app for å samle og bevare reiseminner. Målet er å gi brukere et me
 
 ## Datamodell
 
-Databasen har 7 tabeller. Full SQL ligger i `db/roam-supabase.sql`.
+Databasen har 5 tabeller. Full SQL ligger i `db/roam-supabase.sql`.
 
 ![Database diagram](docs/Roam-dbschema.png)
 
@@ -33,8 +33,8 @@ Databasen har 7 tabeller. Full SQL ligger i `db/roam-supabase.sql`.
 ### profiles
 Brukerinfo som utvider Supabase Auth. Lagrer brukernavn, bio, hjemland og avatar.
 
-### trips
-Reiser. Hver reise har tittel, beskrivelse, datoer og status (planned/ongoing/completed).
+### trip
+En reise til ett land. Har tittel, beskrivelse, datoer, status (planned/ongoing/completed) og referanse til landet.
 
 ### activities
 Opplevelser på en reise. Har type (hike, food, museum osv.), sted, notater og tidspunkt. Kan markeres som høydepunkt.
@@ -42,11 +42,16 @@ Opplevelser på en reise. Har type (hike, food, museum osv.), sted, notater og t
 ### photos
 Bilder knyttet til reiser eller aktiviteter. Lagres i Supabase Storage, URL-er i databasen.
 
-### visited_countries
-Land brukeren har besøkt. Brukes for å fargelegge verdenskartet.
+### countries
+Referansedata med alle land. Brukes for verdenskartet og som foreign key i trip-tabellen.
 
-### bucket_list
-Land brukeren vil besøke. Vises med stiplet kant på kartet.
+## Fremtidige funksjoner (utenfor MVP)
+
+Følgende funksjoner er planlagt for fremtidige versjoner:
+
+- **Bucket list**: Land brukeren ønsker å besøke, med prioritering og notater
+- **Reiser over flere land**: Støtte for at én reise kan dekke flere land
+- **Deling av reiser**: Mulighet for å dele reiser med andre brukere
 
 ## Sikkerhet
 
