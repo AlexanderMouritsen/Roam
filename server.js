@@ -16,6 +16,10 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+// Routes
+const countriesRouter = require("./routes/countries");
+app.use("/api/countries", countriesRouter);
+
 app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

@@ -5,14 +5,14 @@ const { createClient } = require("@supabase/supabase-js");
 
 // Get Supabase URL and service key from .env.local
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
 // Stop the program if required environment variables are missing
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env");
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY in .env.local");
 }
 
-// Create the Supabase client
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  // Create the Supabase client
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 module.exports = supabase;
