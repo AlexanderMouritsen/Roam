@@ -16,11 +16,25 @@ Roam er en app for å samle og bevare reiseminner. Målet er å gi brukere et me
    ```
    PORT=3000
    SUPABASE_URL=din-url
+   SUPABASE_ANON_KEY=din-anon-key 
    SUPABASE_SERVICE_ROLE_KEY=din-nøkkel
    ```
 4. Kjør `npm start`
 
 > `npm start` er definert i `package.json` og laster miljøvariabler automatisk.
+
+## Supabase i Roam
+
+Roam bruker Supabase som database og autentisering. Her er det Supabase tar seg av:
+
+- **Database:** PostgreSQL, med fem tabeller (countries, profiles, trip, activities, photos). Hele oppsettet finner du i `db/roam-supabase.sql`. For å fylle ut land-listen bruker du `db/seed-countries.sql`. 
+- **Autentisering:** Registrering, innlogging og e-postbekreftelse. Alt av brukerhåndtering går via Supabase Auth.
+- **E-postbekreftelse:** Etter at du har registrert deg, får du en e-post med bekreftelseslenke. Du må bekrefte før du kan logge inn.
+- **Row Level Security (RLS):** Alle tabeller har RLS-policyer, slik at brukere kun får tilgang til egne data. Dette gir et ekstra sikkerhetslag.
+- **Storage:** Bilder lastes opp til Supabase Storage. Kun URL-er lagres i databasen.
+- **Automatisk profilopprettelse:** Når en bruker registrerer seg, opprettes det automatisk en rad i `profiles`-tabellen via en trigger.
+
+Supabase-klienten settes opp i `config/supabase.js` og brukes i alle ruter som trenger database- eller auth-tilgang.
 
 ## Datamodell
 
@@ -62,8 +76,20 @@ Følgende funksjoner er planlagt for fremtidige versjoner:
 
 ## API-endepunkter
 
-*Kommer når rutene er implementert.*
+Alle API-endepunkter ligger under `/api/`. Per nå er følgende ruter implementert:
+
+- **POST `/api/auth/signup`** — Registrerer ny bruker (e-post og passord). Sender bekreftelsesepost via Supabase.
+- **POST `/api/auth/login`** — Logger inn bruker og returnerer session-token.
+- **GET `/api/countries`** — Returnerer alle land fra countries-tabellen (brukes til kart og valg av hjemland).
+- **GET `/api/users/me`** — Henter profilinfo for innlogget bruker (krever JWT).
+- **PUT `/api/users/me`** — Oppdaterer profilinfo for innlogget bruker (validerer input, krever JWT).
+
+Flere endepunkter (trips, activities, photos) er planlagt, men ikke ferdig implementert.
+
 
 ## Frontend
 
-*Kommer når sidene er bygget.*
+Frontend ligger i `public/` og består av statiske HTML-filer og vanilla JavaScript:
+
+- **auth.html:** Innlogging og registrering. Bruker JS (`public/js/auth.js`) for å håndtere skjema, tab-switching og API-kall til backend.
+- **confirm.html:** Viser bekreftelse etter e-postverifisering. Håndteres av `public/js/confirm.js`.
