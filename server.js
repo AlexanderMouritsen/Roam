@@ -17,8 +17,18 @@ app.get("/api/health", (req, res) => {
 });
 
 // Routes
+const authRouter = require("./routes/auth");
+app.use("/api/auth", authRouter);
+
 const countriesRouter = require("./routes/countries");
 app.use("/api/countries", countriesRouter);
+
+const profileRouter = require("./routes/profile");
+app.use("/api/users", profileRouter);
+
+app.get("/confirm", (req, res) => {
+  res.sendFile(__dirname + "/public/confirm.html");
+});
 
 app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
