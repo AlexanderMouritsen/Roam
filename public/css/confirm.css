@@ -1,0 +1,38 @@
+/* confirm.css — email confirmation landing page */
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.confirm-box {
+  text-align: center;
+  max-width: 380px;
+  padding: 0 var(--space-6);
+}
+
+.confirm-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid var(--success-border);
+  background: var(--success-dim);
+  color: var(--success);
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-6);
+}
+
+.confirm-box h1 {
+  font-size: 1.4rem;
+  margin-bottom: var(--space-3);
+}
+
+.confirm-box p {
+  font-size: 13px;
+  margin-bottom: var(--space-8);
+}
