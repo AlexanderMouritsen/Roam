@@ -34,7 +34,7 @@ const profileValidation = [
   .withMessage("Username must be between 3 and 30 characters.")
   .matches(/^[a-zA-Z0-9_]+$/)
   .withMessage("Username can only contain letters, numbers, and underscores.")
-  .custom(async (username) => {
+  .custom(async (username, { req }) => {
     const { data } = await supabase
       .from("profiles")
       .select("id")
@@ -81,7 +81,7 @@ const profileValidation = [
 
 // PUT /api/users/me
 // Update profile of the currently authenticated user
-router.put("/me", requireAuth, profileValidation, async (req, res, next) => {
+router.put("/me", requireAuth, profileValidation, async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });

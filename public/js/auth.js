@@ -31,7 +31,7 @@ tabLogin.addEventListener("click", showLogin);
 tabSignup.addEventListener("click", showSignup);
 footerSwitch.addEventListener("click", showSignup);
 
-// Shows or hides a message element
+// Helpers
 function setMessage(el, text) {
   el.textContent = text ?? "";
   el.classList.toggle("visible", Boolean(text));
@@ -41,11 +41,6 @@ function setLoading(btn, isLoading, originalText) {
   btn.classList.toggle("loading", isLoading);
   btn.disabled = isLoading;
   if (!isLoading) btn.textContent = originalText;
-}
-
-function saveSession(session) {
-  localStorage.setItem("roam_token", session.access_token);
-  localStorage.setItem("roam_refresh_token", session.refresh_token);
 }
 
 // Login 
@@ -72,6 +67,7 @@ formLogin.addEventListener("submit", async (e) => {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
+    credentials: "include",
   });
 
   const data = await res.json();
@@ -83,7 +79,6 @@ formLogin.addEventListener("submit", async (e) => {
     return;
   }
 
-  saveSession(data.session);
   setMessage(successEl, "Logged in! Redirecting…");
   setTimeout(() => { window.location.href = "/"; }, 800);
 });
@@ -112,10 +107,10 @@ formSignup.addEventListener("submit", async (e) => {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
+    credentials: "include",
   });
 
   const data = await res.json();
-
   setLoading(btn, false, "Create account");
 
   if (!res.ok) {
@@ -126,13 +121,13 @@ formSignup.addEventListener("submit", async (e) => {
     return;
   }
 
-  if (data.session) {
-    saveSession(data.session);
-    setMessage(successEl, "Account created! Redirecting…");
-    setTimeout(() => { window.location.href = "/"; }, 1000);
-  }
+  setMessage(successEl, "Account created! Check your email to confirm.");
 });
 
-if (localStorage.getItem("roam_token")) {
-  window.location.href = "/";
+// Auth check
+async function checkAlreadyLoggedIn() {
+  const res = await fetch("/api/auth/me", { credentials: "include" });
+  if (res.ok) window.location.href = "/";
 }
+
+checkAlreadyLoggedIn();

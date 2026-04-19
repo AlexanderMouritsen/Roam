@@ -1,14 +1,19 @@
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet"); // For security headers
+const cookieParser = require("cookie-parser");
 const supabase = require("./config/supabase");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:${PORT}",
+  credentials: true, // Allow cookies to be sent
+}));
 app.use(express.json());
+app.use(cookieParser()); // lets req.cookies work in middleware and routes
 
 app.use(express.static("public"));
 
