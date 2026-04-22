@@ -9,11 +9,14 @@ const PORT = process.env.PORT || 3000;
 
 app.use(helmet());
 app.use(cors({
-  origin: "http://localhost:${PORT}",
+  origin: `http://localhost:${PORT}`,
   credentials: true, // Allow cookies to be sent
 }));
 app.use(express.json());
 app.use(cookieParser()); // lets req.cookies work in middleware and routes
+
+const { requireAuth } = require("./middleware/auth");
+const path = require("path");
 
 app.use(express.static("public"));
 
@@ -30,6 +33,11 @@ app.use("/api/countries", countriesRouter);
 
 const profileRouter = require("./routes/profile");
 app.use("/api/users", profileRouter);
+
+// Serves world border coordinates to Leaflet for rendering the country map
+app.get("/api/geojson/countries", requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, "data", "countries.geojson"));
+});
 
 app.get("/confirm", (req, res) => {
   res.sendFile(__dirname + "/public/confirm.html");
