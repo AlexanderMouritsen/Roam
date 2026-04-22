@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roam</title>
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <!-- Leaflet CSS - the map library's own styles for controls and popups -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+  <script src="/js/dashboard.js" defer></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-left">
+      <span class="navbar-logo">Roam</span>
+      <div class="navbar-links">
+        <a href="/" class="navbar-link active">Map</a>
+        <a href="#" class="navbar-link">Trips</a>
+        <a href="#" class="navbar-link">Bucket</a>
+        <a href="#" class="navbar-link">Stats</a>
+      </div>
+    </div>
+
+    <div class="navbar-right">
+      
+      <div class="user-menu" id="user-menu">
+        <div class="user-avatar" id="user-avatar"></div>
+        <div class="user-info">
+          <span class="user-display-name" id="user-display-name">—</span>
+          <span class="user-username" id="user-username">—</span>
+        </div>
+        <svg class="chevron" id="menu-chevron" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      
+      <div class="user-dropdown" id="user-dropdown" hidden>
+        <a href="#" class="dropdown-item">Settings</a>
+        <hr class="dropdown-divider" />
+        <button class="dropdown-item dropdown-item-danger" id="logout-btn">Log out</button>
+      </div>
+    </div>
+  </nav>
+
+  
+  <div class="map-section">
+    <div id="map"></div>
+    <div class="map-footer">
+      <span id="map-stats">Loading…</span>
+    </div>
+  </div>
+
+  
+  <main class="main-content">
+
+    
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="stat-number" id="stat-countries">—</span>
+        <div class="stat-info">
+          <span class="stat-label">Countries</span>
+          <span class="stat-sub" id="stat-countries-sub">—</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" id="stat-trips">—</span>
+        <div class="stat-info">
+          <span class="stat-label">Trips</span>
+          <span class="stat-sub" id="stat-trips-sub">—</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" id="stat-activities">—</span>
+        <div class="stat-info">
+          <span class="stat-label">Activities</span>
+          <span class="stat-sub" id="stat-activities-sub">—</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" id="stat-photos">—</span>
+        <div class="stat-info">
+          <span class="stat-label">Photos</span>
+          <span class="stat-sub" id="stat-photos-sub">—</span>
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="empty-state" id="empty-state" hidden>
+      <div class="empty-state-icon">✦</div>
+      <h2>Your journey starts here</h2>
+      <p>Add your first trip to start building your travel map.</p>
+      <button class="btn btn-primary" id="add-first-trip-btn">Add your first trip</button>
+    </div>
+
+    
+    <div class="recent-content" id="recent-content" hidden>
+      <div class="recent-section">
+        <div class="section-header">
+          <h2 class="section-title">Recent trips</h2>
+          <a href="#" class="section-link">View all</a>
+        </div>
+        <div class="trips-grid" id="trips-grid"></div>
+      </div>
+
+      <div class="recent-section">
+        <div class="section-header">
+          <h2 class="section-title">Recent activity</h2>
+          <a href="#" class="section-link">View all</a>
+        </div>
+        <div class="activity-list" id="activity-list"></div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
