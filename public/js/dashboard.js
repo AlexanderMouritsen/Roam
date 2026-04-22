@@ -74,47 +74,51 @@ async function loadStats() {
 // Initialise the Leaflet map
 function initMap(homeCountry, visitedCountryCodes) {
   const map = L.map("map", {
-    center: [20, 10],
-    zoom: 2,
-    minZoom: 2,
-    maxZoom: 6,
-    zoomControl: false,
-    attributionControl: false,
-    maxBounds: [[-90, -180], [90, 180]],
-    maxBoundsViscosity: 1.0,
-  });
+  center: [20, 10],
+  zoom: 2,
+  minZoom: 2,
+  maxZoom: 6,
+  zoomControl: false,
+  attributionControl: false,
+  scrollWheelZoom: false,
+  doubleClickZoom: false,
+  dragging: false,
+  maxBounds: [[-90, -180], [90, 180]],
+  maxBoundsViscosity: 1.0,
+});
 
-  // TO COME NEXT
   // Fetch the GeoJSON file from our own server
   // This file contains the border shapes of every country in the world
-  fetch("/api/geojson/countries", { credentials: "include" })
-    .then((res) => res.json())
-    .then((geojson) => {
-      // L.geoJSON draws every country shape from the file
-      // The style function runs once per country and returns its fill colour
-      L.geoJSON(geojson, {
-        style: (feature) => {
-          const code = feature.properties.ISO_A2;
+fetch("/api/geojson/countries", { credentials: "include" })
+  .then((res) => res.json())
+  .then((geojson) => {
+    // L.geoJSON draws every country shape from the file
+    // The style function runs once per country and returns its fill colour
+    L.geoJSON(geojson, {
+      style: (feature) => {
+        const code = feature.properties.ISO_A2;
 
-          let fillColor = MAP_COLORS.unvisited;
+        let fillColor = MAP_COLORS.unvisited;
 
-          if (code === homeCountry) {
-            fillColor = MAP_COLORS.home;
-          } else if (visitedCountryCodes.includes(code)) {
-            fillColor = MAP_COLORS.visited;
-          }
+        if (code === homeCountry) {
+          fillColor = MAP_COLORS.home;
+        } else if (visitedCountryCodes.includes(code)) {
+          fillColor = MAP_COLORS.visited;
+        }
 
-          return {
-            fillColor,
-            fillOpacity: code === homeCountry || visitedCountryCodes.includes(code) ? 0.85 : 0.6,
-            color:       MAP_COLORS.border,
-            weight:      0.5,
-          };
-        },
-      }).addTo(map);
-    });
+        return {
+          fillColor,
+          fillOpacity: code === homeCountry || visitedCountryCodes.includes(code) ? 0.85 : 0.6,
+          color:       MAP_COLORS.border,
+          weight:      0.5,
+        };
+      },
+    }).addTo(map);
 
-  return map;
+    map.invalidateSize();
+  });
+
+return map;
 }
 
 // Show/hide recent content vs empty state

@@ -7,7 +7,18 @@ const supabase = require("./config/supabase");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(helmet());
+app.use(helmet({
+  // Allow leaflet and unpkg resources
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://unpkg.com"],
+      styleSrc: ["'self'", "https://unpkg.com", "https://fonts.googleapis.com", "'unsafe-inline'"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "blob:"], // blob: needed for Leaflet map tiles
+    },
+  },
+}));
 app.use(cors({
   origin: `http://localhost:${PORT}`,
   credentials: true, // Allow cookies to be sent
