@@ -116,11 +116,17 @@ create trigger activities_updated_at
   for each row execute function update_updated_at();
 
 -- Auto-create profile when user signs up (username set later by user)
+
 create or replace function create_profile_on_signup()
 returns trigger as $$
 begin
-  insert into profiles (id)
-  values (new.id);
+  insert into profiles (id, username, display_name, home_country)
+  values (
+    new.id,
+    new.raw_user_meta_data->>'username',
+    new.raw_user_meta_data->>'display_name',
+    new.raw_user_meta_data->>'home_country'
+  );
   return new;
 end;
 $$ language plpgsql security definer
