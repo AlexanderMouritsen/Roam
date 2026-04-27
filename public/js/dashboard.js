@@ -1,6 +1,5 @@
 // dashboard.js — main app logic for index.html
 
-// Map colours
 const MAP_COLORS = {
   home:      "#4f8eff",
   visited:   "#c8873a",
@@ -8,7 +7,7 @@ const MAP_COLORS = {
   border:    "#2a2a30", 
 };
 
-//  Auth check 
+// Auth check 
 async function checkAuth() {
   const res = await fetch("/api/users/me", { credentials: "include" });
   if (!res.ok) {
@@ -29,18 +28,15 @@ function populateNavbar(profile) {
   const avatar = document.getElementById("user-avatar");
 
   if (profile.avatar_url) {
-    // If the user has uploaded an avatar, show it as a background image
     avatar.style.backgroundImage = `url(${profile.avatar_url})`;
     avatar.style.backgroundSize  = "cover";
   } else {
-    // Otherwise show their initials
     avatar.textContent = displayName.slice(0, 2).toUpperCase();
   }
 }
 
 // Load stats
 async function loadStats() {
-  // Placeholder until the trips/activities and photos routes are built
   const stats = {
     countries:  0,
     continents: 0,
@@ -72,59 +68,60 @@ async function loadStats() {
 }
 
 // Initialise the Leaflet map
-function initMap(homeCountry, visitedCountryCodes) {
+function initMap(homeCountry, homeCountryName, visitedCountryCodes) {
   const map = L.map("map", {
-  center: [20, 10],
-  zoom: 2,
-  minZoom: 2,
-  maxZoom: 6,
-  zoomControl: false,
-  attributionControl: false,
-  scrollWheelZoom: false,
-  doubleClickZoom: false,
-  dragging: false,
-  maxBounds: [[-90, -180], [90, 180]],
-  maxBoundsViscosity: 1.0,
-});
-
-  // Fetch the GeoJSON file from our own server
-  // This file contains the border shapes of every country in the world
-fetch("/api/geojson/countries", { credentials: "include" })
-  .then((res) => res.json())
-  .then((geojson) => {
-    // L.geoJSON draws every country shape from the file
-    // The style function runs once per country and returns its fill colour
-    L.geoJSON(geojson, {
-      style: (feature) => {
-        const code = feature.properties.ISO_A2;
-
-        let fillColor = MAP_COLORS.unvisited;
-
-        if (code === homeCountry) {
-          fillColor = MAP_COLORS.home;
-        } else if (visitedCountryCodes.includes(code)) {
-          fillColor = MAP_COLORS.visited;
-        }
-
-        return {
-          fillColor,
-          fillOpacity: code === homeCountry || visitedCountryCodes.includes(code) ? 0.85 : 0.6,
-          color:       MAP_COLORS.border,
-          weight:      0.5,
-        };
-      },
-    }).addTo(map);
-
-    map.invalidateSize();
+    center: [20, 10],
+    zoom: 2,
+    minZoom: 2,
+    maxZoom: 6,
+    zoomControl: false,
+    attributionControl: false,
+    scrollWheelZoom: false,
+    doubleClickZoom: false,
+    dragging: false,
+    maxBounds: [[-90, -180], [90, 180]],
+    maxBoundsViscosity: 1.0,
   });
 
-return map;
+  fetch("/api/geojson/countries", { credentials: "include" })
+    .then((res) => res.json())
+    .then((geojson) => {
+      L.geoJSON(geojson, {
+        style: (feature) => {
+          const isoCode = feature.properties["ISO3166-1-Alpha-2"];
+          const name    = feature.properties.name || "";
+
+          // Some countries have -99 instead of a real ISO code in the geojson dataset.
+          // In that case we fall back to matching by the country's full name.
+          const isHome =
+            (isoCode !== "-99" && isoCode === homeCountry) ||
+            (isoCode === "-99" && name === homeCountryName);
+
+          const isVisited = visitedCountryCodes.includes(isoCode);
+
+          let fillColor = MAP_COLORS.unvisited;
+          if (isHome)         fillColor = MAP_COLORS.home;
+          else if (isVisited) fillColor = MAP_COLORS.visited;
+
+          return {
+            fillColor,
+            fillOpacity: isHome || isVisited ? 0.85 : 0.6,
+            color:       MAP_COLORS.border,
+            weight:      0.5,
+          };
+        },
+      }).addTo(map);
+
+      map.invalidateSize();
+    });
+
+  return map;
 }
 
 // Show/hide recent content vs empty state
 function renderRecentContent(tripCount) {
-  const emptyState     = document.getElementById("empty-state");
-  const recentContent  = document.getElementById("recent-content");
+  const emptyState    = document.getElementById("empty-state");
+  const recentContent = document.getElementById("recent-content");
 
   if (tripCount === 0) {
     emptyState.hidden    = false;
@@ -132,25 +129,22 @@ function renderRecentContent(tripCount) {
   } else {
     emptyState.hidden    = true;
     recentContent.hidden = false;
-    // TODO: populate trips grid and activity list when those routes exist
   }
 }
 
 // Dropdown menu
 function initDropdown() {
-  const userMenu    = document.getElementById("user-menu");
-  const dropdown    = document.getElementById("user-dropdown");
-  const chevron     = document.getElementById("menu-chevron");
-  const logoutBtn   = document.getElementById("logout-btn");
+  const userMenu  = document.getElementById("user-menu");
+  const dropdown  = document.getElementById("user-dropdown");
+  const chevron   = document.getElementById("menu-chevron");
+  const logoutBtn = document.getElementById("logout-btn");
 
-  // Toggle dropdown open/closed when clicking the user menu
   userMenu.addEventListener("click", () => {
     const isOpen = !dropdown.hidden;
     dropdown.hidden = isOpen;
     chevron.classList.toggle("open", !isOpen);
   });
 
-  // Close dropdown if the user clicks anywhere else on the page
   document.addEventListener("click", (e) => {
     if (!userMenu.contains(e.target) && !dropdown.contains(e.target)) {
       dropdown.hidden = true;
@@ -158,7 +152,6 @@ function initDropdown() {
     }
   });
 
-  // Logout
   logoutBtn.addEventListener("click", async () => {
     await fetch("/api/auth/logout", {
       method: "POST",
@@ -177,9 +170,18 @@ async function initDashboard() {
 
   const stats = await loadStats();
 
-  // Temp until route is made for visited countries
+  // Fetch the full countries list to get the home country's name,
+  // which we need as a fallback for GeoJSON features with broken ISO codes
+  let homeCountryName = "";
+  const countriesRes = await fetch("/api/countries", { credentials: "include" });
+  if (countriesRes.ok) {
+    const countries = await countriesRes.json();
+    const found = countries.find((c) => c.code === profile.home_country);
+    if (found) homeCountryName = found.name;
+  }
+
   const visitedCountryCodes = [];
-  initMap(profile.home_country, visitedCountryCodes);
+  initMap(profile.home_country, homeCountryName, visitedCountryCodes);
 
   renderRecentContent(stats.trips);
 
