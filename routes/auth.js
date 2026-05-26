@@ -38,9 +38,6 @@ router.post("/signup", async (req, res) => {
     },
   });
 
-  console.log("Supabase error:", error?.message);
-console.log("Supabase data:", data?.user?.id);
-
   if (error) return res.status(400).json({ error: error.message });
 
   if (data.session) {

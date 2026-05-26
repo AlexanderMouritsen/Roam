@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trip · Roam</title>
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/trips.css" />
+  <link rel="stylesheet" href="/css/trip.css" />
+  <script src="/js/trip.js" defer></script>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-left">
+      <span class="navbar-logo">Roam</span>
+      <div class="navbar-links">
+        <a href="/"       class="navbar-link">Map</a>
+        <a href="/trips"  class="navbar-link active">Trips</a>
+        <a href="#"       class="navbar-link">Bucket</a>
+        <a href="#"       class="navbar-link">Stats</a>
+      </div>
+    </div>
+    <div class="navbar-right">
+      <div class="user-menu" id="user-menu">
+        <div class="user-avatar" id="user-avatar"></div>
+        <div class="user-info">
+          <span class="user-display-name" id="user-display-name">—</span>
+          <span class="user-username"     id="user-username">—</span>
+        </div>
+        <svg class="chevron" id="menu-chevron" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="user-dropdown" id="user-dropdown" hidden>
+        <a href="#" class="dropdown-item">Settings</a>
+        <hr class="dropdown-divider" />
+        <button class="dropdown-item dropdown-item-danger" id="logout-btn">Log out</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <a class="back-link" href="/trips">← Back to trips</a>
+
+    <div class="trip-header">
+      <div class="trip-header-left">
+        <h1 id="trip-title">Loading…</h1>
+        <div class="trip-header-meta">
+          <span class="badge" id="trip-status-badge">—</span>
+          <span class="trip-dates" id="trip-dates">—</span>
+        </div>
+      </div>
+      <div class="trip-actions">
+        <button class="btn btn-secondary" id="edit-trip-btn" type="button">Edit trip</button>
+        <button class="btn btn-danger" id="delete-trip-btn" type="button">Delete</button>
+      </div>
+    </div>
+
+    <div class="trip-cover" id="trip-cover"></div>
+
+    <div class="trip-info-grid">
+      <div class="info-card">
+        <span class="info-label">Country</span>
+        <span class="info-value" id="trip-country">—</span>
+      </div>
+      <div class="info-card">
+        <span class="info-label">Status</span>
+        <span class="info-value" id="trip-status">—</span>
+      </div>
+      <div class="info-card">
+        <span class="info-label">Activities</span>
+        <span class="info-value" id="trip-activities">—</span>
+      </div>
+    </div>
+
+    <section class="trip-section">
+      <h2>Description</h2>
+      <p id="trip-description" class="trip-description">—</p>
+    </section>
+
+    <div class="message message-error" id="trip-error"></div>
+  </main>
+
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <div class="modal" id="trip-modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Edit trip</h2>
+        <button class="modal-close" id="modal-close" type="button">
+          <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
+            <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="field">
+          <label class="field-label" for="trip-title-input">Title <span class="field-required">*</span></label>
+          <input class="input" type="text" id="trip-title-input"
+                 placeholder="e.g. Japan 2026" maxlength="100" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="trip-country">Country <span class="field-required">*</span></label>
+          <div class="country-picker" id="trip-country-picker">
+            <input class="input" type="text" id="trip-country-search"
+                   placeholder="Search for a country…" autocomplete="off" />
+            <input type="hidden" id="trip-country-code" />
+            <ul class="country-list" id="trip-country-list" hidden></ul>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="field-label" for="trip-start-date">Start date</label>
+            <input class="input" type="text" id="trip-start-date" placeholder="DD/MM/YYYY" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="trip-end-date">End date</label>
+            <input class="input" type="text" id="trip-end-date" placeholder="DD/MM/YYYY" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="trip-status-input">Status</label>
+          <select class="input input-select" id="trip-status-input">
+            <option value="planned">Planned</option>
+            <option value="ongoing">Ongoing</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="trip-description-input">Description</label>
+          <textarea class="input" id="trip-description-input"
+                    placeholder="What was this trip about?" rows="3" maxlength="1000"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="trip-cover-file">Cover photo</label>
+          <div class="file-input">
+            <button class="file-input-btn" type="button" id="trip-cover-btn">Upload a picture</button>
+            <span class="file-input-name" id="trip-cover-name">No file selected</span>
+            <input class="file-input-native" type="file" id="trip-cover-file" accept="image/*" />
+          </div>
+        </div>
+
+        <div class="message message-error" id="trip-form-error"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modal-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary"   id="trip-submit" type="button">Save changes</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

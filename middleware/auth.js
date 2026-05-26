@@ -1,5 +1,7 @@
 // middleware/auth.js
-// Verifies the JWT token from the httpOnly cookie
+// Verifies the JWT token from the httpOnly cookie and attaches
+// the user and token to req so routes can use them.
+
 const supabase = require("../config/supabase");
 
 async function requireAuth(req, res, next) {
@@ -16,9 +18,12 @@ async function requireAuth(req, res, next) {
   }
 
   req.user = {
-    id: data.user.id,
+    id:    data.user.id,
     email: data.user.email,
   };
+
+  // Attach the token so routes can create an authenticated Supabase client
+  req.token = token;
 
   next();
 }
