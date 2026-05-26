@@ -84,7 +84,14 @@ Alle API-endepunkter ligger under `/api/`. Per nå er følgende ruter implemente
 - **GET `/api/users/me`** — Henter profilinfo for innlogget bruker (krever JWT).
 - **PUT `/api/users/me`** — Oppdaterer profilinfo for innlogget bruker (validerer input, krever JWT).
 
-Flere endepunkter (trips, activities, photos) er planlagt, men ikke ferdig implementert.
+- **GET `/api/trips`** — Henter alle reiser for innlogget bruker.
+- **GET `/api/trips/:id`** — Henter en spesifikk reise (inkludert antall aktiviteter).
+- **POST `/api/trips`** — Oppretter en ny reise (validerer input, krever JWT).
+- **PUT `/api/trips/:id`** — Oppdaterer en reise (validerer input, krever JWT).
+- **DELETE `/api/trips/:id`** — Sletter en reise (krever JWT).
+- **POST `/api/trips/:id/cover`** — Laster opp cover photo for en reise (multipart, krever JWT).
+
+Flere endepunkter (activities, photos) er planlagt, men ikke ferdig implementert.
 
 
 ## Frontend
