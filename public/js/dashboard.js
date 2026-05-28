@@ -32,21 +32,108 @@ function populateNavbar(profile) {
   }
 }
 
+function formatDateTime(dateStr) {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function renderRecentActivities(activities) {
+  const list = document.getElementById("activity-list");
+  list.innerHTML = "";
+
+  if (!activities || activities.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty-activities";
+    empty.textContent = "No activities yet.";
+    list.appendChild(empty);
+    return;
+  }
+
+  activities.forEach((activity) => {
+    const item = document.createElement("a");
+    item.className = "activity-item";
+    item.href = activity.trip_id
+      ? `/activity/${activity.id}/edit?tripId=${activity.trip_id}`
+      : `/activity/${activity.id}/edit`;
+
+    const photoUrl = activity.photos?.[0]?.thumbnail_url || activity.photos?.[0]?.url;
+    const metaParts = [];
+    if (activity.trip_title) metaParts.push(activity.trip_title);
+    if (activity.start_datetime) metaParts.push(formatDateTime(activity.start_datetime));
+
+    item.innerHTML = `
+      ${photoUrl ? `<img class="activity-thumb" src="${photoUrl}" alt="${activity.title}" loading="lazy" />` : `<div class="activity-thumb"></div>`}
+      <div class="activity-info">
+        <div class="activity-title">${activity.title}</div>
+        ${metaParts.length ? `<div class="activity-meta">${metaParts.join(" · ")}</div>` : ""}
+        ${activity.notes ? `<div class="activity-desc">${activity.notes}</div>` : ""}
+      </div>
+    `;
+
+    list.appendChild(item);
+  });
+}
+
+function renderRecentTrips(trips) {
+  const grid = document.getElementById("trips-grid");
+  grid.innerHTML = "";
+
+  const recent = (trips || []).slice(0, 4);
+  recent.forEach((trip) => {
+    const card = document.createElement("a");
+    card.className = "trip-card";
+    card.href = `/trips/${trip.id}`;
+
+    const imageSection = trip.cover_photo_url
+      ? `<img class="trip-card-image" src="${trip.cover_photo_url}" alt="${trip.title}" loading="lazy" />`
+      : `<div class="trip-card-placeholder">✦</div>`;
+
+    card.innerHTML = `
+      ${imageSection}
+      <div class="trip-card-overlay">
+        <div class="trip-card-title">${trip.title}</div>
+        <div class="trip-card-date">${formatDateTime(trip.start_date)}</div>
+      </div>
+    `;
+
+    grid.appendChild(card);
+  });
+}
+
 async function loadStats(visitedCount) {
   const stats = {
     continents: 0,
-    trips:      0,
+    trips: 0,
     activities: 0,
-    photos:     0,
+    photos: 0,
+    countries: visitedCount,
+    recent_activities: [],
   };
 
-  document.getElementById("stat-countries").textContent  = visitedCount;
-  document.getElementById("stat-trips").textContent      = stats.trips;
+  const res = await fetch("/api/stats", { credentials: "include" });
+  if (res.ok) {
+    const data = await res.json();
+    stats.trips = data.trips_total || 0;
+    stats.activities = data.activities_total || 0;
+    stats.photos = data.photos_total || 0;
+    stats.countries = data.countries_visited ?? visitedCount;
+    stats.continents = data.continents_visited ?? 0;
+    stats.recent_activities = data.recent_activities || [];
+  }
+
+  document.getElementById("stat-countries").textContent = stats.countries;
+  document.getElementById("stat-trips").textContent = stats.trips;
   document.getElementById("stat-activities").textContent = stats.activities;
-  document.getElementById("stat-photos").textContent     = stats.photos;
+  document.getElementById("stat-photos").textContent = stats.photos;
 
   document.getElementById("stat-countries-sub").textContent =
-    visitedCount > 0 ? `Across ${stats.continents} continents` : "No countries yet";
+    stats.countries > 0 ? `Across ${stats.continents} continents` : "No countries yet";
   document.getElementById("stat-trips-sub").textContent =
     stats.trips > 0 ? `${stats.trips} trips logged` : "No trips yet";
   document.getElementById("stat-activities-sub").textContent =
@@ -55,9 +142,11 @@ async function loadStats(visitedCount) {
     stats.photos > 0 ? `Across all trips` : "No photos yet";
 
   document.getElementById("map-stats").textContent =
-    visitedCount > 0
-      ? `${visitedCount} ${visitedCount === 1 ? "country" : "countries"} visited`
+    stats.countries > 0
+      ? `${stats.countries} ${stats.countries === 1 ? "country" : "countries"} visited`
       : "No countries visited yet";
+
+  renderRecentActivities(stats.recent_activities);
 
   return stats;
 }
@@ -136,8 +225,8 @@ function initDropdown() {
   const chevron   = document.getElementById("menu-chevron");
   const logoutBtn = document.getElementById("logout-btn");
 
-    document.getElementById("add-first-trip-btn").addEventListener("click", () => {
-    window.location.href = "/trips.html";
+  document.getElementById("add-first-trip-btn").addEventListener("click", () => {
+    window.location.href = "/trips";
   });
 
   userMenu.addEventListener("click", () => {
@@ -187,6 +276,7 @@ async function initDashboard() {
     tripCount = trips.length;
     // Deduplicate — user might have multiple trips to the same country
     visitedCountryCodes = [...new Set(trips.map((t) => t.country_code))];
+    renderRecentTrips(trips);
   }
 
   await loadStats(visitedCountryCodes.length);

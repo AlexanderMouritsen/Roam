@@ -224,6 +224,7 @@ function toggleCardDropdown(trip, card, anchor) {
     if (res.ok) {
       allTrips = allTrips.filter((t) => t.id !== trip.id);
       renderTrips();
+      populateCountryFilter();
     }
     dropdown.remove();
   });
@@ -240,6 +241,7 @@ function toggleCardDropdown(trip, card, anchor) {
 // Apply filters and re-render the grid
 function renderTrips() {
   const statusFilter = document.getElementById("filter-status").value;
+  const countryFilter = document.getElementById("filter-country").value;
   const sortOrder    = document.getElementById("filter-sort").value;
   const searchQuery  = document.getElementById("search-input").value.toLowerCase().trim();
 
@@ -248,6 +250,11 @@ function renderTrips() {
   // Status filter
   if (statusFilter !== "all") {
     filtered = filtered.filter((t) => t.status === statusFilter);
+  }
+
+  // Country filter
+  if (countryFilter !== "all") {
+    filtered = filtered.filter((t) => t.country_code === countryFilter);
   }
 
   // Search
@@ -285,6 +292,25 @@ function renderTrips() {
 
   noResultsState.hidden = true;
   filtered.forEach((trip) => grid.appendChild(createTripCard(trip)));
+}
+
+function populateCountryFilter() {
+  const select = document.getElementById("filter-country");
+  const visitedCodes = [...new Set(allTrips.map((trip) => trip.country_code))];
+  const options = visitedCodes
+    .map((code) => {
+      const country = allCountries.find((c) => c.code === code);
+      return { code, name: country?.name || code };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  select.innerHTML = "<option value=\"all\">All countries</option>";
+  options.forEach((country) => {
+    const option = document.createElement("option");
+    option.value = country.code;
+    option.textContent = country.name;
+    select.appendChild(option);
+  });
 }
 
 // ── Country picker (same pattern as auth.js) ──────────────────────────────────
@@ -499,6 +525,7 @@ function initModal() {
         allTrips[index] = { ...allTrips[index], ...updatedTrip };
       }
       renderTrips();
+      populateCountryFilter();
       closeModal();
       currentEditTripId = null;
       return;
@@ -516,6 +543,7 @@ function initModal() {
 
     allTrips.unshift(newTrip);
     renderTrips();
+    populateCountryFilter();
     closeModal();
   });
 }
@@ -535,10 +563,12 @@ async function initTrips() {
 
   renderTrips();
   initCountryPicker();
+  populateCountryFilter();
   initModal();
 
   // Filter/sort/search listeners — all re-render client-side
   document.getElementById("filter-status").addEventListener("change", renderTrips);
+  document.getElementById("filter-country").addEventListener("change", renderTrips);
   document.getElementById("filter-sort").addEventListener("change", renderTrips);
   document.getElementById("search-input").addEventListener("input", renderTrips);
 }

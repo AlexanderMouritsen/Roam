@@ -17,6 +17,7 @@
       <div class="navbar-links">
         <a href="/"       class="navbar-link">Map</a>
         <a href="/trips"  class="navbar-link active">Trips</a>
+        <a href="/activities" class="navbar-link">Activities</a>
         <a href="#"       class="navbar-link">Bucket</a>
         <a href="#"       class="navbar-link">Stats</a>
       </div>
@@ -60,6 +61,22 @@
 
     <div class="trip-cover" id="trip-cover"></div>
 
+    <section class="trip-section" id="trip-gallery" hidden>
+      <div class="trip-section-header">
+        <h2>Trip gallery</h2>
+        <button class="btn btn-secondary btn-sm" id="trip-photo-btn" type="button">Upload photos</button>
+        <input class="file-input-native" type="file" id="trip-photo-input" accept="image/*" multiple hidden />
+      </div>
+      <div class="trip-photo-upload" id="trip-photo-upload" hidden>
+        <div class="trip-photo-grid" id="trip-photo-pending-grid"></div>
+        <div class="trip-photo-upload-actions">
+          <button class="btn btn-secondary btn-sm" id="trip-photo-cancel" type="button">Cancel</button>
+          <button class="btn btn-primary btn-sm" id="trip-photo-save" type="button">Upload selected</button>
+        </div>
+      </div>
+      <div class="trip-photo-grid" id="trip-photo-grid"></div>
+    </section>
+
     <div class="trip-info-grid">
       <div class="info-card">
         <span class="info-label">Country</span>
@@ -78,6 +95,39 @@
     <section class="trip-section">
       <h2>Description</h2>
       <p id="trip-description" class="trip-description">—</p>
+    </section>
+
+    <section class="trip-section trip-section-activities">
+      <div class="trip-section-header">
+        <h2>Activities</h2>
+      </div>
+
+      <div class="trip-highlights" id="trip-highlights" hidden>
+        <div class="trip-highlights-header">
+          <span class="overline">Highlights</span>
+        </div>
+        <div class="highlight-rail" id="highlight-rail"></div>
+      </div>
+
+      <div class="activity-rail" id="activity-rail"></div>
+
+      <div class="trip-timeline" id="trip-timeline" hidden>
+        <div class="trip-highlights-header">
+          <span class="overline">Timeline</span>
+        </div>
+        <div class="timeline-list" id="timeline-list"></div>
+      </div>
+
+      <div class="trip-activities-footer" id="trip-activities-footer" hidden>
+        <button class="btn btn-primary btn-sm" id="add-activity-bottom" type="button">+ Add activity</button>
+      </div>
+
+      <div class="empty-state" id="activities-empty" hidden>
+        <div class="empty-state-icon">✦</div>
+        <h3>No activities yet</h3>
+        <p>Start by adding your first memory to this trip.</p>
+        <a class="btn btn-primary btn-sm" id="activities-empty-btn" href="#">Add activity</a>
+      </div>
     </section>
 
     <div class="message message-error" id="trip-error"></div>
@@ -153,6 +203,117 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" id="modal-cancel" type="button">Cancel</button>
         <button class="btn btn-primary"   id="trip-submit" type="button">Save changes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="activity-modal-overlay" hidden>
+    <div class="modal" id="activity-modal">
+      <div class="modal-header">
+        <h2 id="activity-modal-title">New activity</h2>
+        <button class="modal-close" id="activity-modal-close" type="button">
+          <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
+            <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="field">
+          <label class="field-label" for="activity-title">Title <span class="field-required">*</span></label>
+          <input class="input" type="text" id="activity-title" maxlength="150"
+                 placeholder="e.g. Fushimi Inari hike" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="activity-type">Type</label>
+          <select class="input input-select" id="activity-type">
+            <option value="hike">Hike</option>
+            <option value="food">Food</option>
+            <option value="transport">Transport</option>
+            <option value="museum">Museum</option>
+            <option value="beach">Beach</option>
+            <option value="accommodation">Accommodation</option>
+            <option value="shopping">Shopping</option>
+            <option value="concert">Concert</option>
+            <option value="nature">Nature</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="activity-location">Location name</label>
+          <input class="input" type="text" id="activity-location" placeholder="Optional place name" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="activity-datetime">Date</label>
+          <input class="input" type="date" id="activity-datetime" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="activity-notes">Notes</label>
+          <textarea class="input" id="activity-notes" rows="4"
+                    placeholder="What happened? What did you feel? What do you want to remember?"></textarea>
+        </div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="activity-highlight" />
+          <span>Mark as highlight</span>
+        </label>
+
+        <div class="field">
+          <label class="field-label" for="activity-photo">Photos</label>
+          <div class="file-input">
+            <button class="file-input-btn" type="button" id="activity-photo-btn">Upload a picture</button>
+            <span class="file-input-name" id="activity-photo-name">No file selected</span>
+            <input class="file-input-native" type="file" id="activity-photo" accept="image/*" multiple />
+          </div>
+          <div class="activity-photo-details" id="activity-photo-details" hidden></div>
+        </div>
+
+        <div class="message message-error" id="activity-form-error"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="activity-modal-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="activity-submit" type="button">Save activity</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="photo-detail-overlay" hidden>
+    <div class="photo-modal" id="photo-detail-modal">
+      <div class="photo-modal-header">
+        <h2>Photo details</h2>
+        <button class="modal-close" id="photo-detail-close" type="button">
+          <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
+            <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="photo-modal-body">
+        <div class="photo-modal-image-wrap">
+          <img id="photo-detail-image" alt="Trip photo" />
+        </div>
+        <div class="photo-modal-content">
+          <div class="photo-modal-date" id="photo-detail-date-display"></div>
+          <div class="field">
+            <label class="field-label" for="photo-detail-caption">Notes</label>
+            <textarea class="input" id="photo-detail-caption" rows="6" placeholder="Write a detailed memory..."></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="photo-detail-date">Date</label>
+            <input class="input" type="date" id="photo-detail-date" />
+          </div>
+          <div class="photo-modal-actions">
+            <button class="btn btn-secondary" id="photo-detail-cancel" type="button">Close</button>
+            <button class="btn btn-danger" id="photo-detail-delete" type="button">Remove</button>
+            <button class="btn btn-primary" id="photo-detail-save" type="button">Save</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

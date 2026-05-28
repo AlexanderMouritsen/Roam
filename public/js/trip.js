@@ -2,6 +2,12 @@
 
 let allCountries = [];
 let currentTrip = null;
+let allActivities = [];
+let currentActivity = null;
+let tripPhotos = [];
+let pendingTripFiles = [];
+let activityPhotoObjectUrls = [];
+let currentPhoto = null;
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -65,6 +71,13 @@ function formatDate(dateStr) {
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
+function formatDateOnly(dateStr) {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
 function formatDateInput(dateStr) {
   if (!dateStr) return "";
   const [year, month, day] = dateStr.split("-");
@@ -92,6 +105,47 @@ function parseDateInput(value) {
   }
 
   return iso;
+}
+
+function formatDateInputValue(dateStr) {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function getTodayInputValue() {
+  return formatDateInputValue(new Date().toISOString());
+}
+
+function toIsoDate(dateValue) {
+  if (!dateValue) return null;
+  return new Date(`${dateValue}T00:00:00`).toISOString();
+}
+
+function clampDateWithinRange(dateValue, startDate, endDate) {
+  if (!dateValue || (!startDate && !endDate)) return dateValue;
+  const target = new Date(`${dateValue}T00:00:00`);
+  if (Number.isNaN(target.getTime())) return dateValue;
+
+  if (startDate) {
+    const start = new Date(`${startDate}T00:00:00`);
+    if (target < start) return startDate;
+  }
+
+  if (endDate) {
+    const end = new Date(`${endDate}T00:00:00`);
+    if (target > end) return endDate;
+  }
+
+  return dateValue;
+}
+
+function truncateText(value, maxLength) {
+  if (!value) return "";
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength).trim()}…`;
 }
 
 async function uploadCoverPhoto(tripId, file) {
@@ -154,6 +208,77 @@ async function fetchTrip(tripId) {
   return res.json();
 }
 
+async function fetchActivities(tripId) {
+  const res = await fetch(`/api/trips/${tripId}/activities`, { credentials: "include" });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+async function uploadActivityPhoto(tripId, activityId, file, caption, takenAt) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("trip_id", tripId);
+  formData.append("activity_id", activityId);
+  if (caption) formData.append("caption", caption);
+  if (takenAt) formData.append("taken_at", takenAt);
+
+  const res = await fetch("/api/photos", {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error ?? "Failed to upload activity photo.");
+  }
+
+  return data;
+}
+
+async function uploadTripPhoto(tripId, file, caption, takenAt) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("trip_id", tripId);
+  if (caption) formData.append("caption", caption);
+  if (takenAt) formData.append("taken_at", takenAt);
+
+  const res = await fetch("/api/photos", {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error ?? "Failed to upload trip photo.");
+  }
+
+  return data;
+}
+
+async function fetchTripPhotos(tripId) {
+  const res = await fetch(`/api/photos/trip/${tripId}`, { credentials: "include" });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+async function updatePhoto(photoId, payload) {
+  const res = await fetch(`/api/photos/${photoId}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error ?? "Failed to update photo.");
+  }
+
+  return data;
+}
+
 function renderTrip(trip) {
   clearPageError();
 
@@ -194,6 +319,165 @@ function renderTrip(trip) {
       });
     }
   }
+}
+
+function formatActivityType(value) {
+  if (!value) return "";
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function buildActivityMeta(activity) {
+  const parts = [];
+  if (activity.activity_type) parts.push(formatActivityType(activity.activity_type));
+  if (activity.location_name) parts.push(activity.location_name);
+  if (activity.start_datetime) parts.push(formatDateOnly(activity.start_datetime));
+  return parts.join(" · ");
+}
+
+function createActivityCard(activity, isHighlight) {
+  const card = document.createElement("article");
+  card.className = `activity-card${isHighlight ? " highlight" : ""}`;
+
+  const photoUrl = activity.photos?.[0]?.thumbnail_url || activity.photos?.[0]?.url || "";
+  const meta = buildActivityMeta(activity);
+  const notes = truncateText(activity.notes || "", isHighlight ? 160 : 90);
+
+  card.innerHTML = `
+    ${photoUrl ? `<img class="activity-card-photo" src="${photoUrl}" alt="${activity.title}" loading="lazy" />` : ""}
+    <div class="activity-card-header">
+      <div>
+        <div class="activity-card-title">${activity.title}</div>
+        ${meta ? `<div class="activity-card-meta">${meta}</div>` : ""}
+      </div>
+    </div>
+    ${notes ? `<div class="activity-card-notes">${notes}</div>` : ""}
+    <div class="activity-actions">
+      <button class="btn btn-ghost btn-sm" type="button" data-action="edit">Edit</button>
+      <a class="btn btn-ghost btn-sm" href="/activity/${activity.id}/edit?tripId=${activity.trip_id}">Open</a>
+      <button class="btn btn-ghost btn-sm" type="button" data-action="delete">Delete</button>
+    </div>
+  `;
+
+  card.querySelector("[data-action='edit']").addEventListener("click", () => {
+    openActivityModal(activity);
+  });
+
+  card.querySelector("[data-action='delete']").addEventListener("click", () => {
+    deleteActivity(activity);
+  });
+
+  return card;
+}
+
+function updateActivityCount() {
+  const count = allActivities.length;
+  document.getElementById("trip-activities").textContent =
+    `${count} ${count === 1 ? "activity" : "activities"}`;
+}
+
+function renderActivities(activities) {
+  const rail = document.getElementById("activity-rail");
+  const highlightsWrap = document.getElementById("trip-highlights");
+  const highlightsRail = document.getElementById("highlight-rail");
+  const emptyState = document.getElementById("activities-empty");
+  const timelineWrap = document.getElementById("trip-timeline");
+  const timelineList = document.getElementById("timeline-list");
+  const footer = document.getElementById("trip-activities-footer");
+
+  rail.innerHTML = "";
+  highlightsRail.innerHTML = "";
+  timelineList.innerHTML = "";
+
+  if (activities.length === 0) {
+    emptyState.hidden = false;
+    highlightsWrap.hidden = true;
+    timelineWrap.hidden = true;
+    footer.hidden = true;
+    return;
+  }
+
+  emptyState.hidden = true;
+  footer.hidden = false;
+
+  const highlights = activities.filter((activity) => activity.is_highlight);
+  if (highlights.length > 0) {
+    highlightsWrap.hidden = false;
+    highlights.forEach((activity) => {
+      highlightsRail.appendChild(createActivityCard(activity, true));
+    });
+  } else {
+    highlightsWrap.hidden = true;
+  }
+
+  activities.forEach((activity) => {
+    rail.appendChild(createActivityCard(activity, false));
+  });
+
+  renderTimeline(activities);
+  timelineWrap.hidden = false;
+}
+
+function formatTimelineDate(dateStr) {
+  if (!dateStr) return "Date unknown";
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return "Date unknown";
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function buildTimelineMeta(activity) {
+  const parts = [];
+  if (activity.activity_type) parts.push(formatActivityType(activity.activity_type));
+  if (activity.location_name) parts.push(activity.location_name);
+  return parts.join(" · ");
+}
+
+function renderTimeline(activities) {
+  const timelineList = document.getElementById("timeline-list");
+  timelineList.innerHTML = "";
+
+  const sorted = [...activities].sort((a, b) => {
+    const timeA = a.start_datetime ? new Date(a.start_datetime).getTime() : new Date(a.created_at).getTime();
+    const timeB = b.start_datetime ? new Date(b.start_datetime).getTime() : new Date(b.created_at).getTime();
+    return timeA - timeB;
+  });
+
+  let currentGroup = null;
+  let lastDate = "";
+
+  sorted.forEach((activity) => {
+    const dateLabel = formatTimelineDate(activity.start_datetime || activity.created_at);
+    if (dateLabel !== lastDate) {
+      currentGroup = document.createElement("div");
+      currentGroup.className = "timeline-group";
+      const header = document.createElement("div");
+      header.className = "timeline-date";
+      header.textContent = dateLabel;
+      currentGroup.appendChild(header);
+      timelineList.appendChild(currentGroup);
+      lastDate = dateLabel;
+    }
+
+    const item = document.createElement("div");
+    item.className = "timeline-item";
+
+    const meta = buildTimelineMeta(activity);
+    const notes = truncateText(activity.notes || "", 140);
+    const highlightBadge = activity.is_highlight ? `<span class="timeline-badge">Highlight</span>` : "";
+
+    item.innerHTML = `
+      <div class="timeline-marker"></div>
+      <div class="timeline-content">
+        <div class="timeline-title">
+          <span>${activity.title}</span>
+          ${highlightBadge}
+        </div>
+        ${meta ? `<div class="timeline-meta">${meta}</div>` : ""}
+        ${notes ? `<div class="timeline-notes">${notes}</div>` : ""}
+      </div>
+    `;
+
+    currentGroup.appendChild(item);
+  });
 }
 
 // ── Country picker ───────────────────────────────────────────────────────────
@@ -387,6 +671,218 @@ function initModal() {
   });
 }
 
+// ── Activity modal ──────────────────────────────────────────────────────────
+
+function openActivityModal(activity) {
+  currentActivity = activity || null;
+
+  document.getElementById("activity-title").value = activity?.title || "";
+  document.getElementById("activity-type").value = activity?.activity_type || "other";
+  document.getElementById("activity-location").value = activity?.location_name || "";
+  const dateInput = document.getElementById("activity-datetime");
+  const baseDate = activity?.start_datetime
+    ? formatDateInputValue(activity.start_datetime)
+    : getTodayInputValue();
+  dateInput.value = clampDateWithinRange(baseDate, currentTrip?.start_date, currentTrip?.end_date);
+  document.getElementById("activity-notes").value = activity?.notes || "";
+  document.getElementById("activity-highlight").checked = Boolean(activity?.is_highlight);
+  document.getElementById("activity-photo").value = "";
+  document.getElementById("activity-photo-name").textContent = "No file selected";
+  const details = document.getElementById("activity-photo-details");
+  details.innerHTML = "";
+  details.hidden = true;
+  activityPhotoObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+  activityPhotoObjectUrls = [];
+  document.getElementById("activity-form-error").textContent = "";
+  document.getElementById("activity-form-error").classList.remove("visible");
+
+  document.getElementById("activity-modal-title").textContent = activity ? "Edit activity" : "New activity";
+  document.getElementById("activity-submit").textContent = activity ? "Save changes" : "Save activity";
+
+  document.getElementById("activity-modal-overlay").hidden = false;
+}
+
+function closeActivityModal() {
+  document.getElementById("activity-modal-overlay").hidden = true;
+}
+
+async function refreshTripData() {
+  const trip = await fetchTrip(currentTrip.id);
+  if (!trip) return;
+  currentTrip = trip;
+  allActivities = trip.activities || [];
+  renderTrip(currentTrip);
+  renderActivities(allActivities);
+  updateActivityCount();
+}
+
+async function deletePhoto(photoId) {
+  await fetch(`/api/photos/${photoId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+}
+
+async function deleteActivity(activity) {
+  if (!currentTrip) return;
+  if (!confirm(`Delete "${activity.title}"? This cannot be undone.`)) return;
+
+  await fetch(`/api/trips/${currentTrip.id}/activities/${activity.id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  await refreshTripData();
+}
+
+function initActivityModal() {
+  const addBtn = document.getElementById("add-activity-bottom");
+  const emptyBtn = document.getElementById("activities-empty-btn");
+  const overlay = document.getElementById("activity-modal-overlay");
+
+  if (addBtn) {
+    addBtn.addEventListener("click", () => openActivityModal(null));
+  }
+  emptyBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    openActivityModal(null);
+  });
+
+  document.getElementById("activity-modal-close").addEventListener("click", closeActivityModal);
+  document.getElementById("activity-modal-cancel").addEventListener("click", closeActivityModal);
+
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeActivityModal();
+  });
+
+  const fileInput = document.getElementById("activity-photo");
+  const fileBtn = document.getElementById("activity-photo-btn");
+  const fileName = document.getElementById("activity-photo-name");
+  const details = document.getElementById("activity-photo-details");
+
+  fileBtn.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files.length > 1) {
+      fileName.textContent = `${fileInput.files.length} files selected`;
+    } else {
+      fileName.textContent = fileInput.files[0]?.name || "No file selected";
+    }
+
+    activityPhotoObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+    activityPhotoObjectUrls = [];
+    details.innerHTML = "";
+
+    const files = Array.from(fileInput.files || []);
+    if (files.length === 0) {
+      details.hidden = true;
+      return;
+    }
+
+    files.forEach((file, index) => {
+      const url = URL.createObjectURL(file);
+      activityPhotoObjectUrls.push(url);
+      const row = document.createElement("div");
+      row.className = "activity-photo-detail";
+      row.innerHTML = `
+        <img src="${url}" alt="Selected activity" />
+        <input class="input" type="text" placeholder="Caption" data-photo-caption="${index}" />
+        <input class="input" type="date" value="${getTodayInputValue()}" data-photo-date="${index}" />
+      `;
+      details.appendChild(row);
+    });
+
+    details.hidden = false;
+  });
+
+  document.getElementById("activity-submit").addEventListener("click", async () => {
+    if (!currentTrip) return;
+
+    const title = document.getElementById("activity-title").value.trim();
+    const activity_type = document.getElementById("activity-type").value;
+    const location_name = document.getElementById("activity-location").value.trim();
+    const startValue = document.getElementById("activity-datetime").value;
+    const notes = document.getElementById("activity-notes").value.trim();
+    const is_highlight = document.getElementById("activity-highlight").checked;
+    const files = Array.from(document.getElementById("activity-photo").files || []);
+    const errorEl = document.getElementById("activity-form-error");
+    const submitBtn = document.getElementById("activity-submit");
+
+    errorEl.textContent = "";
+    errorEl.classList.remove("visible");
+
+    if (!title) {
+      errorEl.textContent = "Title is required.";
+      errorEl.classList.add("visible");
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = currentActivity ? "Saving…" : "Saving…";
+
+    const payload = {
+      title,
+      activity_type,
+      is_highlight,
+    };
+
+    if (location_name) payload.location_name = location_name;
+    if (notes) payload.notes = notes;
+    if (startValue) {
+      const clamped = clampDateWithinRange(startValue, currentTrip?.start_date, currentTrip?.end_date);
+      document.getElementById("activity-datetime").value = clamped;
+      payload.start_datetime = toIsoDate(clamped);
+    }
+
+    const endpoint = currentActivity
+      ? `/api/trips/${currentTrip.id}/activities/${currentActivity.id}`
+      : `/api/trips/${currentTrip.id}/activities`;
+    const method = currentActivity ? "PUT" : "POST";
+
+    const res = await fetch(endpoint, {
+      method,
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = currentActivity ? "Save changes" : "Save activity";
+
+    if (!res.ok) {
+      errorEl.textContent = data.errors?.[0]?.msg ?? data.error ?? "Something went wrong.";
+      errorEl.classList.add("visible");
+      return;
+    }
+
+    if (files.length > 0) {
+      try {
+        for (const [index, file] of files.entries()) {
+          const captionInput = document.querySelector(`[data-photo-caption="${index}"]`);
+          const dateInput = document.querySelector(`[data-photo-date="${index}"]`);
+          const caption = captionInput?.value?.trim() || "";
+          const dateValue = dateInput?.value || "";
+          await uploadActivityPhoto(
+            currentTrip.id,
+            data.id || currentActivity?.id,
+            file,
+            caption,
+            dateValue ? toIsoDate(dateValue) : null
+          );
+        }
+      } catch (uploadError) {
+        errorEl.textContent = uploadError.message;
+        errorEl.classList.add("visible");
+        return;
+      }
+    }
+
+    await refreshTripData();
+    closeActivityModal();
+  });
+}
+
 // ── Delete ───────────────────────────────────────────────────────────────────
 
 function initDelete() {
@@ -425,10 +921,214 @@ async function initTripPage() {
 
   currentTrip = trip;
   renderTrip(currentTrip);
+  allActivities = trip.activities || [];
+  renderActivities(allActivities);
+  updateActivityCount();
+
+  tripPhotos = await fetchTripPhotos(currentTrip.id);
+  renderTripPhotos();
+  initTripPhotoUpload();
+
+  const emptyBtn = document.getElementById("activities-empty-btn");
+  if (emptyBtn) {
+    emptyBtn.setAttribute("href", `/activity/new?tripId=${currentTrip.id}`);
+  }
 
   initCountryPicker();
   initModal();
   initDelete();
+  initActivityModal();
+}
+
+function renderTripPhotos() {
+  const gallery = document.getElementById("trip-gallery");
+  const grid = document.getElementById("trip-photo-grid");
+
+  gallery.hidden = false;
+  grid.innerHTML = "";
+
+  if (!tripPhotos || tripPhotos.length === 0) {
+    grid.innerHTML = `<div class="empty-state">No trip photos yet.</div>`;
+    return;
+  }
+
+  tripPhotos.forEach((photo) => {
+    const card = document.createElement("div");
+    card.className = "trip-photo-card";
+    card.innerHTML = `
+      <img src="${photo.thumbnail_url || photo.url}" alt="Trip photo" loading="lazy" />
+      <div class="trip-photo-meta">
+        <input class="input" type="text" value="${photo.caption || ""}" placeholder="Caption" data-photo-caption />
+        <input class="input" type="date" value="${formatDateInputValue(photo.taken_at)}" data-photo-date />
+      </div>
+      <div class="trip-photo-actions">
+        <button class="btn btn-ghost btn-sm" type="button" data-action="save">Save</button>
+        <button class="btn btn-ghost btn-sm" type="button" data-action="delete">Remove</button>
+      </div>
+    `;
+
+    card.querySelector("img").addEventListener("click", () => {
+      openPhotoDetail(photo);
+    });
+
+    card.querySelector("[data-action='save']").addEventListener("click", async () => {
+      const caption = card.querySelector("[data-photo-caption]").value.trim();
+      const dateValue = card.querySelector("[data-photo-date]").value;
+
+      try {
+        const updated = await updatePhoto(photo.id, {
+          caption: caption || null,
+          taken_at: dateValue ? toIsoDate(dateValue) : null,
+        });
+        const index = tripPhotos.findIndex((item) => item.id === photo.id);
+        if (index !== -1) {
+          tripPhotos[index] = updated;
+        }
+      } catch (error) {
+        showPageError(error.message);
+      }
+    });
+
+    card.querySelector("[data-action='delete']").addEventListener("click", async () => {
+      await deletePhoto(photo.id);
+      tripPhotos = tripPhotos.filter((item) => item.id !== photo.id);
+      renderTripPhotos();
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+function openPhotoDetail(photo) {
+  currentPhoto = photo;
+  const overlay = document.getElementById("photo-detail-overlay");
+  const image = document.getElementById("photo-detail-image");
+  const caption = document.getElementById("photo-detail-caption");
+  const dateInput = document.getElementById("photo-detail-date");
+  const dateDisplay = document.getElementById("photo-detail-date-display");
+
+  image.src = photo.url;
+  caption.value = photo.caption || "";
+  dateInput.value = formatDateInputValue(photo.taken_at) || getTodayInputValue();
+  dateDisplay.textContent = formatDateOnly(dateInput.value || photo.taken_at) || "Date";
+  overlay.hidden = false;
+}
+
+function closePhotoDetail() {
+  const overlay = document.getElementById("photo-detail-overlay");
+  overlay.hidden = true;
+  currentPhoto = null;
+}
+
+function initTripPhotoUpload() {
+  const input = document.getElementById("trip-photo-input");
+  const btn = document.getElementById("trip-photo-btn");
+  const uploadPanel = document.getElementById("trip-photo-upload");
+  const pendingGrid = document.getElementById("trip-photo-pending-grid");
+  const cancelBtn = document.getElementById("trip-photo-cancel");
+  const saveBtn = document.getElementById("trip-photo-save");
+
+  btn.addEventListener("click", () => input.click());
+
+  input.addEventListener("change", () => {
+    const files = Array.from(input.files || []);
+    if (!currentTrip || files.length === 0) return;
+
+    pendingTripFiles = files;
+    pendingGrid.innerHTML = "";
+
+    files.forEach((file, index) => {
+      const url = URL.createObjectURL(file);
+      const card = document.createElement("div");
+      card.className = "trip-photo-card";
+      card.innerHTML = `
+        <img src="${url}" alt="Trip upload" loading="lazy" />
+        <div class="trip-photo-meta">
+          <input class="input" type="text" placeholder="Notes" data-photo-caption="${index}" />
+          <input class="input" type="date" value="${getTodayInputValue()}" data-photo-date="${index}" />
+        </div>
+      `;
+      pendingGrid.appendChild(card);
+    });
+
+    uploadPanel.hidden = false;
+  });
+
+  cancelBtn.addEventListener("click", () => {
+    pendingTripFiles = [];
+    pendingGrid.innerHTML = "";
+    uploadPanel.hidden = true;
+    input.value = "";
+  });
+
+  saveBtn.addEventListener("click", async () => {
+    if (!currentTrip || pendingTripFiles.length === 0) return;
+
+    try {
+      for (const [index, file] of pendingTripFiles.entries()) {
+        const captionInput = pendingGrid.querySelector(`[data-photo-caption="${index}"]`);
+        const dateInput = pendingGrid.querySelector(`[data-photo-date="${index}"]`);
+        const caption = captionInput?.value?.trim() || "";
+        const dateValue = dateInput?.value || "";
+        const uploaded = await uploadTripPhoto(
+          currentTrip.id,
+          file,
+          caption,
+          dateValue ? toIsoDate(dateValue) : null
+        );
+        tripPhotos.unshift(uploaded);
+      }
+
+      renderTripPhotos();
+      pendingTripFiles = [];
+      pendingGrid.innerHTML = "";
+      uploadPanel.hidden = true;
+      input.value = "";
+    } catch (error) {
+      showPageError(error.message);
+    }
+  });
+
+  const detailOverlay = document.getElementById("photo-detail-overlay");
+  document.getElementById("photo-detail-close").addEventListener("click", closePhotoDetail);
+  document.getElementById("photo-detail-cancel").addEventListener("click", closePhotoDetail);
+  detailOverlay.addEventListener("click", (event) => {
+    if (event.target === detailOverlay) closePhotoDetail();
+  });
+
+  document.getElementById("photo-detail-save").addEventListener("click", async () => {
+    if (!currentPhoto) return;
+    const caption = document.getElementById("photo-detail-caption").value.trim();
+    const dateValue = document.getElementById("photo-detail-date").value;
+    const dateDisplay = document.getElementById("photo-detail-date-display");
+
+    try {
+      const updated = await updatePhoto(currentPhoto.id, {
+        caption: caption || null,
+        taken_at: dateValue ? toIsoDate(dateValue) : null,
+      });
+      const index = tripPhotos.findIndex((item) => item.id === currentPhoto.id);
+      if (index !== -1) tripPhotos[index] = updated;
+      dateDisplay.textContent = formatDateOnly(dateValue) || "Date";
+      renderTripPhotos();
+      closePhotoDetail();
+    } catch (error) {
+      showPageError(error.message);
+    }
+  });
+
+  document.getElementById("photo-detail-date").addEventListener("change", (event) => {
+    const dateDisplay = document.getElementById("photo-detail-date-display");
+    dateDisplay.textContent = formatDateOnly(event.target.value) || "Date";
+  });
+
+  document.getElementById("photo-detail-delete").addEventListener("click", async () => {
+    if (!currentPhoto) return;
+    await deletePhoto(currentPhoto.id);
+    tripPhotos = tripPhotos.filter((item) => item.id !== currentPhoto.id);
+    renderTripPhotos();
+    closePhotoDetail();
+  });
 }
 
 initTripPage();
