@@ -301,6 +301,10 @@
   animation: rp-fade-in 150ms ease both;
 }
 
+.modal-overlay[hidden] {
+  display: none;
+}
+
 @keyframes rp-fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }

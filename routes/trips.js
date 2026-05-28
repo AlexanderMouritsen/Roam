@@ -104,15 +104,47 @@ router.get("/:id", requireAuth, async (req, res) => {
     return res.status(500).json({ error: "Failed to fetch trip." });
   }
 
-  const { data: activities } = await db
+  const { data: activities, error: activitiesError } = await db
     .from("activities")
-    .select("id")
+    .select(
+      "id, trip_id, title, activity_type, location_name, latitude, longitude, notes, start_datetime, is_highlight, created_at, updated_at"
+    )
     .eq("trip_id", req.params.id)
-    .eq("user_id", req.user.id);
+    .eq("user_id", req.user.id)
+    .order("start_datetime", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
+  if (activitiesError) {
+    return res.status(500).json({ error: "Failed to fetch activities." });
+  }
+
+  let activityPhotos = {};
+  if (activities.length > 0) {
+    const activityIds = activities.map((activity) => activity.id);
+
+    const { data: photos } = await db
+      .from("photos")
+      .select("id, activity_id, url, thumbnail_url, caption, taken_at, created_at")
+      .in("activity_id", activityIds)
+      .eq("user_id", req.user.id);
+
+    (photos || []).forEach((photo) => {
+      if (!activityPhotos[photo.activity_id]) {
+        activityPhotos[photo.activity_id] = [];
+      }
+      activityPhotos[photo.activity_id].push(photo);
+    });
+  }
+
+  const activityList = activities.map((activity) => ({
+    ...activity,
+    photos: activityPhotos[activity.id] || [],
+  }));
 
   res.json({
     ...data,
-    activity_count: activities?.length || 0,
+    activity_count: activities.length,
+    activities: activityList,
   });
 });
 

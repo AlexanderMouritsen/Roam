@@ -53,7 +53,7 @@ create index trip_country_code_idx on trip(country_code);
 -- Activities: individual experiences within a trip
 create table activities (
   id uuid primary key default gen_random_uuid(),
-  trip_id uuid not null references trip(id) on delete cascade,
+  trip_id uuid references trip(id) on delete cascade,
   user_id uuid not null references profiles(id) on delete cascade,
   title text not null,
   activity_type text not null default 'other' check (activity_type in ('hike', 'food', 'transport', 'museum', 'beach', 'accommodation', 'shopping', 'concert', 'nature', 'other')),

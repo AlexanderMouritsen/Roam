@@ -35,11 +35,19 @@ const authRouter      = require("./routes/auth");
 const countriesRouter = require("./routes/countries");
 const profileRouter   = require("./routes/profile");
 const tripsRouter     = require("./routes/trips");
+const activitiesRouter = require("./routes/activities");
+const activitiesRootRouter = require("./routes/activitiesRoot");
+const photosRouter    = require("./routes/photos");
+const statsRouter     = require("./routes/stats");
 
 app.use("/api/auth",      authRouter);
 app.use("/api/countries", countriesRouter);
 app.use("/api/users",     profileRouter);
 app.use("/api/trips",     tripsRouter);
+app.use("/api/trips",     activitiesRouter);
+app.use("/api/activities", activitiesRootRouter);
+app.use("/api/photos",    photosRouter);
+app.use("/api/stats",     statsRouter);
 
 app.get("/api/geojson/countries", requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, "data", "countries.geojson"));
@@ -55,6 +63,18 @@ app.get("/trips", requireAuth, (req, res) => {
 
 app.get("/trips/:id", requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "trip.html"));
+});
+
+app.get("/activities", requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "activities.html"));
+});
+
+app.get("/activity/new", requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "activity-new.html"));
+});
+
+app.get("/activity/:id/edit", requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "activity-edit.html"));
 });
 
 app.listen(PORT, () => {

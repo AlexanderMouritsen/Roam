@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New activity · Roam</title>
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/trips.css" />
+  <link rel="stylesheet" href="/css/activity.css" />
+  <script src="/js/activity.js" defer></script>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-left">
+      <span class="navbar-logo">Roam</span>
+      <div class="navbar-links">
+        <a href="/"       class="navbar-link">Map</a>
+        <a href="/trips"  class="navbar-link active">Trips</a>
+        <a href="/activities" class="navbar-link">Activities</a>
+        <a href="#"       class="navbar-link">Bucket</a>
+        <a href="#"       class="navbar-link">Stats</a>
+      </div>
+    </div>
+    <div class="navbar-right">
+      <div class="user-menu" id="user-menu">
+        <div class="user-avatar" id="user-avatar"></div>
+        <div class="user-info">
+          <span class="user-display-name" id="user-display-name">—</span>
+          <span class="user-username"     id="user-username">—</span>
+        </div>
+        <svg class="chevron" id="menu-chevron" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="user-dropdown" id="user-dropdown" hidden>
+        <a href="#" class="dropdown-item">Settings</a>
+        <hr class="dropdown-divider" />
+        <button class="dropdown-item dropdown-item-danger" id="logout-btn">Log out</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content activity-page">
+    <a class="back-link" id="back-to-trip" href="/trips">← Back to trip</a>
+
+    <header class="activity-header">
+      <h1 id="activity-page-title">New activity</h1>
+      <p id="activity-page-sub">Add a new memory to this trip.</p>
+    </header>
+
+    <section class="activity-form-card">
+      <div class="field">
+        <label class="field-label" for="activity-title-input">Title <span class="field-required">*</span></label>
+        <input class="input" type="text" id="activity-title-input" maxlength="150"
+               placeholder="e.g. Fushimi Inari hike" />
+      </div>
+
+      <div class="field" id="activity-trip-field">
+        <label class="field-label" for="activity-trip-select">Trip (optional)</label>
+        <select class="input input-select" id="activity-trip-select">
+          <option value="">No trip</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="activity-type-input">Type</label>
+        <select class="input input-select" id="activity-type-input">
+          <option value="hike">Hike</option>
+          <option value="food">Food</option>
+          <option value="transport">Transport</option>
+          <option value="museum">Museum</option>
+          <option value="beach">Beach</option>
+          <option value="accommodation">Accommodation</option>
+          <option value="shopping">Shopping</option>
+          <option value="concert">Concert</option>
+          <option value="nature">Nature</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="activity-location-input">Location name</label>
+        <input class="input" type="text" id="activity-location-input" placeholder="Optional place name" />
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="activity-datetime-input">Date</label>
+        <input class="input" type="date" id="activity-datetime-input" />
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="activity-notes-input">Notes</label>
+        <textarea class="input" id="activity-notes-input" rows="5"
+                  placeholder="What happened? What did you feel? What do you want to remember?"></textarea>
+      </div>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="activity-highlight-input" />
+        <span>Mark as highlight</span>
+      </label>
+
+      <div class="field">
+        <label class="field-label" for="activity-photo-input">Photos</label>
+        <div class="file-input">
+          <button class="file-input-btn" type="button" id="activity-photo-btn">Upload a picture</button>
+          <span class="file-input-name" id="activity-photo-name">No file selected</span>
+          <input class="file-input-native" type="file" id="activity-photo-input" accept="image/*" multiple />
+        </div>
+        <div class="activity-photo-preview" id="activity-photo-preview" hidden>
+          <div class="activity-photo-grid" id="activity-photo-grid"></div>
+          <button class="btn btn-ghost btn-sm" type="button" id="activity-photo-clear">Clear selection</button>
+        </div>
+        <div class="activity-photo-existing" id="activity-photo-existing" hidden>
+          <div class="activity-photo-grid" id="activity-photo-existing-grid"></div>
+        </div>
+      </div>
+
+      <div class="message message-error" id="activity-form-error"></div>
+
+      <div class="activity-form-actions">
+        <a class="btn btn-secondary" id="activity-cancel" href="/trips">Cancel</a>
+        <button class="btn btn-primary" id="activity-submit" type="button">Save activity</button>
+      </div>
+    </section>
+  </main>
+
+</body>
+</html>

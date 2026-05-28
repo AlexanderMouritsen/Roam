@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Activities · Roam</title>
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/trips.css" />
+  <link rel="stylesheet" href="/css/activities.css" />
+  <script src="/js/activities.js" defer></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-left">
+      <span class="navbar-logo">Roam</span>
+      <div class="navbar-links">
+        <a href="/" class="navbar-link">Map</a>
+        <a href="/trips" class="navbar-link">Trips</a>
+        <a href="/activities" class="navbar-link active">Activities</a>
+        <a href="#" class="navbar-link">Bucket</a>
+        <a href="#" class="navbar-link">Stats</a>
+      </div>
+    </div>
+    <div class="navbar-right">
+      <div class="user-menu" id="user-menu">
+        <div class="user-avatar" id="user-avatar"></div>
+        <div class="user-info">
+          <span class="user-display-name" id="user-display-name">—</span>
+          <span class="user-username" id="user-username">—</span>
+        </div>
+        <svg class="chevron" id="menu-chevron" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="user-dropdown" id="user-dropdown" hidden>
+        <a href="#" class="dropdown-item">Settings</a>
+        <hr class="dropdown-divider" />
+        <button class="dropdown-item dropdown-item-danger" id="logout-btn">Log out</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div class="page-header-left">
+        <h1>Your activities</h1>
+        <p>Everything you have logged, even without a trip.</p>
+      </div>
+      <a class="btn btn-primary" href="/activity/new">+ New activity</a>
+    </div>
+
+    <div class="filters-row">
+      <div class="filter-group">
+        <select class="input input-select filter-select" id="filter-type">
+          <option value="all">All types</option>
+          <option value="hike">Hike</option>
+          <option value="food">Food</option>
+          <option value="transport">Transport</option>
+          <option value="museum">Museum</option>
+          <option value="beach">Beach</option>
+          <option value="accommodation">Accommodation</option>
+          <option value="shopping">Shopping</option>
+          <option value="concert">Concert</option>
+          <option value="nature">Nature</option>
+          <option value="other">Other</option>
+        </select>
+
+        <select class="input input-select filter-select" id="filter-trip">
+          <option value="all">All trips</option>
+        </select>
+
+        <select class="input input-select filter-select" id="filter-sort">
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="activity-list" id="activity-list"></div>
+
+    <div class="empty-state" id="empty-state" hidden>
+      <div class="empty-state-icon">✦</div>
+      <h2>No activities yet</h2>
+      <p>Log your first memory and keep it forever.</p>
+      <a class="btn btn-primary" href="/activity/new">+ New activity</a>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="photo-detail-overlay" hidden>
+    <div class="photo-modal" id="photo-detail-modal">
+      <div class="photo-modal-header">
+        <h2>Photo details</h2>
+        <button class="modal-close" id="photo-detail-close" type="button">
+          <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
+            <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="photo-modal-body">
+        <div class="photo-modal-image-wrap">
+          <img id="photo-detail-image" alt="Activity photo" />
+        </div>
+        <div class="photo-modal-content">
+          <div class="photo-modal-date" id="photo-detail-date-display"></div>
+          <div class="field">
+            <label class="field-label" for="photo-detail-caption">Notes</label>
+            <textarea class="input" id="photo-detail-caption" rows="6" placeholder="Write a detailed memory..."></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="photo-detail-date">Date</label>
+            <input class="input" type="date" id="photo-detail-date" />
+          </div>
+          <div class="photo-modal-actions">
+            <button class="btn btn-secondary" id="photo-detail-cancel" type="button">Close</button>
+            <button class="btn btn-danger" id="photo-detail-delete" type="button">Remove</button>
+            <button class="btn btn-primary" id="photo-detail-save" type="button">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
