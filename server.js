@@ -1,3 +1,27 @@
+const fs = require("fs");
+const path = require("path");
+
+function loadLocalEnv(filePath = path.join(__dirname, ".env.local")) {
+  if (!fs.existsSync(filePath)) return;
+
+  const content = fs.readFileSync(filePath, "utf8");
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const equalsIndex = trimmed.indexOf("=");
+    if (equalsIndex === -1) continue;
+
+    const key = trimmed.slice(0, equalsIndex).trim();
+    const value = trimmed.slice(equalsIndex + 1).trim();
+    if (key && process.env[key] === undefined) {
+      process.env[key] = value;
+    }
+  }
+}
+
+loadLocalEnv();
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -5,12 +29,19 @@ const cookieParser = require("cookie-parser");
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+const supabaseOrigin = process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL).origin : null;
+
+const connectSrc = ["'self'"];
+if (supabaseOrigin) {
+  connectSrc.push(supabaseOrigin);
+}
 
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc:  ["'self'", "https://unpkg.com"],
+      connectSrc,
       styleSrc:   ["'self'", "https://unpkg.com", "https://fonts.googleapis.com", "'unsafe-inline'"],
       fontSrc:    ["'self'", "https://fonts.gstatic.com"],
       imgSrc:     ["'self'", "data:", "blob:", "https:"],
@@ -24,7 +55,6 @@ app.use(cookieParser());
 
 const { requireAuth } = require("./middleware/auth");
 const { createAuthClient } = require("./config/supabase");
-const path = require("path");
 
 app.use(express.static("public"));
 
@@ -67,6 +97,10 @@ app.get("/trips/:id", requireAuth, (req, res) => {
 
 app.get("/activities", requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "activities.html"));
+});
+
+app.get("/settings", requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "settings.html"));
 });
 
 app.get("/activity/new", requireAuth, (req, res) => {

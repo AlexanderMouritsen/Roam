@@ -100,6 +100,52 @@ body::after {
   gap: var(--space-4);
 }
 
+.auth-callout {
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.auth-callout-kicker {
+  margin: 0 0 var(--space-1) 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text-tertiary);
+}
+
+.auth-callout h2 {
+  margin: 0 0 var(--space-2) 0;
+  font-size: 20px;
+}
+
+.auth-callout p:last-child {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.auth-link {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.auth-link:hover {
+  color: var(--accent-hover);
+}
+
+.auth-link-center {
+  align-self: center;
+  margin-top: calc(var(--space-1) * -1);
+}
+
 .country-picker {
   position: relative;
 }

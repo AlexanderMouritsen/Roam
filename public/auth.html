@@ -6,6 +6,7 @@
   <title>Roam — Log in</title>
   <link rel="stylesheet" href="/css/global.css" />
   <link rel="stylesheet" href="/css/auth.css" />
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script src="/js/auth.js" defer></script>
 </head>
 <body>
@@ -35,12 +36,64 @@
                  placeholder="••••••••" autocomplete="current-password" />
         </div>
 
+        <button class="auth-link" type="button" id="forgot-password-btn">Forgot password?</button>
+
         <div class="message message-error"   id="login-error"></div>
         <div class="message message-success" id="login-success"></div>
 
         <button class="btn btn-primary btn-lg btn-full" type="submit" id="login-btn">
           Log in
         </button>
+      </form>
+
+      <!-- Reset password request form -->
+      <form class="auth-form" id="form-reset" novalidate hidden>
+        <div class="auth-callout">
+          <p class="auth-callout-kicker">Password reset</p>
+          <h2>Send a reset link</h2>
+          <p>We'll email you a link to create a new password.</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="reset-email">Email</label>
+          <input class="input" type="email" id="reset-email" placeholder="you@example.com" autocomplete="email" />
+        </div>
+
+        <div class="message message-error" id="reset-error"></div>
+        <div class="message message-success" id="reset-success"></div>
+
+        <button class="btn btn-primary btn-lg btn-full" type="submit" id="reset-btn">
+          Send reset link
+        </button>
+
+        <button class="auth-link auth-link-center" type="button" id="reset-back-btn">Back to log in</button>
+      </form>
+
+      <!-- Recovery form shown after opening the email link -->
+      <form class="auth-form" id="form-recovery" novalidate hidden>
+        <div class="auth-callout">
+          <p class="auth-callout-kicker">Password recovery</p>
+          <h2>Create a new password</h2>
+          <p>Choose a new password for your account.</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="recovery-password">New password</label>
+          <input class="input" type="password" id="recovery-password" placeholder="At least 8 characters" autocomplete="new-password" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="recovery-password-confirm">Confirm new password</label>
+          <input class="input" type="password" id="recovery-password-confirm" placeholder="Repeat your new password" autocomplete="new-password" />
+        </div>
+
+        <div class="message message-error" id="recovery-error"></div>
+        <div class="message message-success" id="recovery-success"></div>
+
+        <button class="btn btn-primary btn-lg btn-full" type="submit" id="recovery-btn">
+          Update password
+        </button>
+
+        <button class="auth-link auth-link-center" type="button" id="recovery-back-btn">Back to log in</button>
       </form>
 
       <!-- Signup form (hidden by default) -->

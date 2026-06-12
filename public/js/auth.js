@@ -2,12 +2,39 @@
 
 const tabLogin     = document.getElementById("tab-login");
 const tabSignup    = document.getElementById("tab-signup");
+const authTabs     = document.querySelector(".auth-tabs");
 const formLogin    = document.getElementById("form-login");
 const formSignup   = document.getElementById("form-signup");
+const formReset    = document.getElementById("form-reset");
+const formRecovery = document.getElementById("form-recovery");
 const footerSwitch = document.getElementById("footer-switch");
 const authFooter   = document.getElementById("auth-footer");
+const loginEmailInput = document.getElementById("login-email");
+const loginPasswordInput = document.getElementById("login-password");
+const forgotPasswordBtn = document.getElementById("forgot-password-btn");
+const loginErrorEl = document.getElementById("login-error");
+const loginSuccessEl = document.getElementById("login-success");
+const loginBtn = document.getElementById("login-btn");
+const resetEmailInput = document.getElementById("reset-email");
+const resetErrorEl = document.getElementById("reset-error");
+const resetSuccessEl = document.getElementById("reset-success");
+const resetBtn = document.getElementById("reset-btn");
+const resetBackBtn = document.getElementById("reset-back-btn");
+const recoveryPasswordInput = document.getElementById("recovery-password");
+const recoveryPasswordConfirmInput = document.getElementById("recovery-password-confirm");
+const recoveryErrorEl = document.getElementById("recovery-error");
+const recoverySuccessEl = document.getElementById("recovery-success");
+const recoveryBtn = document.getElementById("recovery-btn");
+const recoveryBackBtn = document.getElementById("recovery-back-btn");
 
-
+const signupEmailInput = document.getElementById("signup-email");
+const signupPasswordInput = document.getElementById("signup-password");
+const signupUsernameInput = document.getElementById("signup-username");
+const signupDisplayNameInput = document.getElementById("signup-display-name");
+const signupHomeCountryInput = document.getElementById("signup-home-country");
+const signupErrorEl = document.getElementById("signup-error");
+const signupSuccessEl = document.getElementById("signup-success");
+const signupBtn = document.getElementById("signup-btn");
 
 function showLogin() {
   tabLogin.classList.add("active");
@@ -49,39 +76,101 @@ let allCountries = []; // [{ code: "NO", name: "Norway" }, ...]
 
 const countrySearch  = document.getElementById("country-search");
 const countryList    = document.getElementById("country-list");
-const countryCodeInput = document.getElementById("signup-home-country"); // hidden
+let supabaseClient = null;
+
+function isRecoveryIntent() {
+  const params = new URLSearchParams(window.location.search);
+  return (
+    params.get("mode") === "recovery" ||
+    window.location.hash.includes("type=recovery") ||
+    window.location.hash.includes("access_token=")
+  );
+}
+
+function setFooterForMode(mode) {
+  if (mode === "login") {
+    authFooter.hidden = false;
+    authFooter.innerHTML = `Don't have an account? <button type="button" id="footer-switch">Sign up</button>`;
+    document.getElementById("footer-switch").addEventListener("click", showSignup);
+    return;
+  }
+
+  if (mode === "signup") {
+    authFooter.hidden = false;
+    authFooter.innerHTML = `Already have an account? <button type="button" id="footer-switch">Log in</button>`;
+    document.getElementById("footer-switch").addEventListener("click", showLogin);
+    return;
+  }
+
+  authFooter.hidden = true;
+}
+
+function hideAuthForms() {
+  formLogin.hidden = true;
+  formSignup.hidden = true;
+  formReset.hidden = true;
+  formRecovery.hidden = true;
+}
+
+function showLogin() {
+  hideAuthForms();
+  authTabs.hidden = false;
+  tabLogin.classList.add("active");
+  tabSignup.classList.remove("active");
+  formLogin.hidden = false;
+  setFooterForMode("login");
+}
+
+function showSignup() {
+  hideAuthForms();
+  authTabs.hidden = false;
+  tabSignup.classList.add("active");
+  tabLogin.classList.remove("active");
+  formSignup.hidden = false;
+  setFooterForMode("signup");
+}
+
+function showResetRequest() {
+  hideAuthForms();
+  authTabs.hidden = true;
+  formReset.hidden = false;
+  setFooterForMode("reset");
+  if (loginEmailInput.value.trim() && !resetEmailInput.value.trim()) {
+    resetEmailInput.value = loginEmailInput.value.trim();
+  }
+}
+
+function showRecovery() {
+  hideAuthForms();
+  authTabs.hidden = true;
+  formRecovery.hidden = false;
+  setFooterForMode("recovery");
+}
 
 async function loadCountries() {
   const res = await fetch("/api/countries");
   if (!res.ok) return;
-
-  allCountries = await res.json(); // already sorted by name from the server
+  allCountries = await res.json();
 }
 
-// Render filtered country list
 function renderCountryList(query) {
   const q = query.toLowerCase().trim();
-
-  // Filter to countries whose name contains the query
-  const matches = q
-    ? allCountries.filter((c) => c.name.toLowerCase().includes(q))
-    : allCountries;
+  const matches = q ? allCountries.filter((c) => c.name.toLowerCase().includes(q)) : allCountries;
 
   countryList.innerHTML = "";
 
   if (matches.length === 0) {
     const li = document.createElement("li");
     li.textContent = "No countries found.";
-    li.className   = "no-results";
+    li.className = "no-results";
     countryList.appendChild(li);
   } else {
     matches.forEach((c) => {
-      const li       = document.createElement("li");
+      const li = document.createElement("li");
       li.textContent = c.name;
       li.dataset.code = c.code;
 
       li.addEventListener("mousedown", (e) => {
-        // mousedown fires before blur, so set value first
         e.preventDefault();
         selectCountry(c);
       });
@@ -93,133 +182,259 @@ function renderCountryList(query) {
   countryList.hidden = false;
 }
 
-// Set country input values on selection
 function selectCountry(country) {
-  countrySearch.value    = country.name; // show the name in the visible input
-  countryCodeInput.value = country.code; // store the code in the hidden input
-  countryList.hidden     = true;
+  countrySearch.value = country.name;
+  signupHomeCountryInput.value = country.code;
+  countryList.hidden = true;
 }
 
-// Show list on focus
-countrySearch.addEventListener("focus", () => {
-  renderCountryList(countrySearch.value);
-});
-
-// Filter list on input and clear code if typing
-countrySearch.addEventListener("input", () => {
-  countryCodeInput.value = "";
-  renderCountryList(countrySearch.value);
-});
-
-// Hide list on blur
-countrySearch.addEventListener("blur", () => {
-  // Small delay so a mousedown on a list item can fire first
-  setTimeout(() => { countryList.hidden = true; }, 150);
-});
-
-loadCountries();
-
-// Login handler
-
-formLogin.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const email     = document.getElementById("login-email").value.trim();
-  const password  = document.getElementById("login-password").value;
-  const errorEl   = document.getElementById("login-error");
-  const successEl = document.getElementById("login-success");
-  const btn       = document.getElementById("login-btn");
-
-  setMessage(errorEl,   null);
-  setMessage(successEl, null);
-
-  if (!email || !password) {
-    setMessage(errorEl, "Please fill in email and password.");
-    return;
-  }
-
-  setLoading(btn, true, "Log in");
-
-  const res  = await fetch("/api/auth/login", {
-    method:      "POST",
-    headers:     { "Content-Type": "application/json" },
-    credentials: "include",
-    body:        JSON.stringify({ email, password }),
+function initCountryPicker() {
+  countrySearch.addEventListener("focus", () => {
+    renderCountryList(countrySearch.value);
   });
 
-  const data = await res.json();
-  setLoading(btn, false, "Log in");
-
-  if (!res.ok) {
-    setMessage(errorEl, data.error ?? "Something went wrong.");
-    return;
-  }
-
-  setMessage(successEl, "Logged in! Redirecting…");
-  setTimeout(() => { window.location.href = "/"; }, 800);
-});
-
-// Signup handler
-
-formSignup.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const email        = document.getElementById("signup-email").value.trim();
-  const password     = document.getElementById("signup-password").value;
-  const username     = document.getElementById("signup-username").value.trim();
-  const display_name = document.getElementById("signup-display-name").value.trim();
-  const home_country = document.getElementById("signup-home-country").value; // hidden input
-  const errorEl      = document.getElementById("signup-error");
-  const successEl    = document.getElementById("signup-success");
-  const btn          = document.getElementById("signup-btn");
-
-  setMessage(errorEl,   null);
-  setMessage(successEl, null);
-
-  // Client-side checks
-  if (!email)        { setMessage(errorEl, "Email is required.");                       return; }
-  if (!password)     { setMessage(errorEl, "Password is required.");                    return; }
-  if (!username)     { setMessage(errorEl, "Username is required.");                    return; }
-  if (!display_name) { setMessage(errorEl, "Display name is required.");                return; }
-  if (!home_country) { setMessage(errorEl, "Please select a home country from the list."); return; }
-
-  setLoading(btn, true, "Create account");
-
-  const res = await fetch("/api/auth/signup", {
-    method:      "POST",
-    headers:     { "Content-Type": "application/json" },
-    credentials: "include",
-    body:        JSON.stringify({ email, password, username, display_name, home_country }),
+  countrySearch.addEventListener("input", () => {
+    signupHomeCountryInput.value = "";
+    renderCountryList(countrySearch.value);
   });
 
-  const data = await res.json();
-  setLoading(btn, false, "Create account");
+  countrySearch.addEventListener("blur", () => {
+    setTimeout(() => {
+      countryList.hidden = true;
+    }, 150);
+  });
+}
 
-  if (!res.ok) {
-    const msg = data.errors
-      ? data.errors.map((e) => e.msg).join(" ")
-      : data.error ?? "Something went wrong.";
-    setMessage(errorEl, msg);
-    return;
-  }
+async function initSupabaseClient() {
+  const res = await fetch("/api/auth/public-config");
+  if (!res.ok) return;
 
-  setMessage(
-    successEl,
-    data.confirmed
-      ? "Account created! Redirecting…"
-      : "Account created! Check your email to confirm."
-  );
+  const config = await res.json();
+  if (!window.supabase || !config.supabaseUrl || !config.supabaseAnonKey) return;
 
-  if (data.confirmed) {
-    setTimeout(() => { window.location.href = "/"; }, 800);
-  }
-});
+  supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+    auth: {
+      detectSessionInUrl: true,
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  });
 
-// Redirect if already logged in
+  supabaseClient.auth.onAuthStateChange((event) => {
+    if (event === "PASSWORD_RECOVERY") {
+      showRecovery();
+    }
+  });
+}
 
 async function checkAlreadyLoggedIn() {
+  if (isRecoveryIntent()) return;
+
   const res = await fetch("/api/users/me", { credentials: "include" });
   if (res.ok) window.location.href = "/";
 }
 
-checkAlreadyLoggedIn();
+tabLogin.addEventListener("click", showLogin);
+tabSignup.addEventListener("click", showSignup);
+forgotPasswordBtn.addEventListener("click", showResetRequest);
+resetBackBtn.addEventListener("click", showLogin);
+recoveryBackBtn.addEventListener("click", showLogin);
+
+formLogin.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const email = loginEmailInput.value.trim();
+  const password = loginPasswordInput.value;
+
+  setMessage(loginErrorEl, null);
+  setMessage(loginSuccessEl, null);
+
+  if (!email || !password) {
+    setMessage(loginErrorEl, "Please fill in email and password.");
+    return;
+  }
+
+  setLoading(loginBtn, true, "Log in");
+
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await res.json();
+  setLoading(loginBtn, false, "Log in");
+
+  if (!res.ok) {
+    setMessage(loginErrorEl, data.error ?? "Something went wrong.");
+    return;
+  }
+
+  setMessage(loginSuccessEl, "Logged in! Redirecting…");
+  setTimeout(() => {
+    window.location.href = "/";
+  }, 800);
+});
+
+formSignup.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const email = signupEmailInput.value.trim();
+  const password = signupPasswordInput.value;
+  const username = signupUsernameInput.value.trim();
+  const display_name = signupDisplayNameInput.value.trim();
+  const home_country = signupHomeCountryInput.value;
+
+  setMessage(signupErrorEl, null);
+  setMessage(signupSuccessEl, null);
+
+  if (!email) {
+    setMessage(signupErrorEl, "Email is required.");
+    return;
+  }
+  if (!password) {
+    setMessage(signupErrorEl, "Password is required.");
+    return;
+  }
+  if (!username) {
+    setMessage(signupErrorEl, "Username is required.");
+    return;
+  }
+  if (!display_name) {
+    setMessage(signupErrorEl, "Display name is required.");
+    return;
+  }
+  if (!home_country) {
+    setMessage(signupErrorEl, "Please select a home country from the list.");
+    return;
+  }
+
+  setLoading(signupBtn, true, "Create account");
+
+  const res = await fetch("/api/auth/signup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email, password, username, display_name, home_country }),
+  });
+
+  const data = await res.json();
+  setLoading(signupBtn, false, "Create account");
+
+  if (!res.ok) {
+    const msg = data.errors ? data.errors.map((e) => e.msg).join(" ") : data.error ?? "Something went wrong.";
+    setMessage(signupErrorEl, msg);
+    return;
+  }
+
+  setMessage(
+    signupSuccessEl,
+    data.confirmed ? "Account created! Redirecting…" : "Account created! Check your email to confirm."
+  );
+
+  if (data.confirmed) {
+    setTimeout(() => {
+      window.location.href = "/";
+    }, 800);
+  }
+});
+
+formReset.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const email = resetEmailInput.value.trim();
+
+  setMessage(resetErrorEl, null);
+  setMessage(resetSuccessEl, null);
+
+  if (!email) {
+    setMessage(resetErrorEl, "Email is required.");
+    return;
+  }
+
+  setLoading(resetBtn, true, "Send reset link");
+
+  try {
+    const res = await fetch("/api/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    setLoading(resetBtn, false, "Send reset link");
+
+    if (!res.ok) {
+      setMessage(resetErrorEl, data.error ?? "Failed to send reset link.");
+      return;
+    }
+
+    setMessage(resetSuccessEl, data.message ?? "If that email exists, a reset link has been sent.");
+  } catch (err) {
+    setLoading(resetBtn, false, "Send reset link");
+    setMessage(resetErrorEl, "Failed to send reset link.");
+  }
+});
+
+formRecovery.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const password = recoveryPasswordInput.value;
+  const confirm = recoveryPasswordConfirmInput.value;
+
+  setMessage(recoveryErrorEl, null);
+  setMessage(recoverySuccessEl, null);
+
+  if (!password || !confirm) {
+    setMessage(recoveryErrorEl, "Please fill in both password fields.");
+    return;
+  }
+  if (password.length < 8) {
+    setMessage(recoveryErrorEl, "New password must be at least 8 characters.");
+    return;
+  }
+  if (password !== confirm) {
+    setMessage(recoveryErrorEl, "Passwords do not match.");
+    return;
+  }
+  if (!supabaseClient) {
+    setMessage(recoveryErrorEl, "Password recovery is not available right now.");
+    return;
+  }
+
+  setLoading(recoveryBtn, true, "Update password");
+
+  try {
+    const { error } = await supabaseClient.auth.updateUser({ password });
+    setLoading(recoveryBtn, false, "Update password");
+
+    if (error) {
+      setMessage(recoveryErrorEl, error.message ?? "Failed to update password.");
+      return;
+    }
+
+    setMessage(recoverySuccessEl, "Password updated. Redirecting to log in…");
+    await supabaseClient.auth.signOut();
+    setTimeout(() => {
+      window.location.href = "/auth.html";
+    }, 1000);
+  } catch (err) {
+    setLoading(recoveryBtn, false, "Update password");
+    setMessage(recoveryErrorEl, "Failed to update password.");
+  }
+});
+
+async function initAuthPage() {
+  await Promise.all([loadCountries(), initSupabaseClient()]);
+
+  if (isRecoveryIntent()) {
+    showRecovery();
+  } else {
+    showLogin();
+  }
+
+  initCountryPicker();
+  await checkAlreadyLoggedIn();
+}
+
+initAuthPage();

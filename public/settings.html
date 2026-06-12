@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roam — Settings</title>
+  <link rel="stylesheet" href="/css/global.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <link rel="stylesheet" href="/css/settings.css" />
+  <script src="/js/settings.js" defer></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-left">
+      <span class="navbar-logo">Roam</span>
+      <div class="navbar-links">
+        <a href="/" class="navbar-link">Map</a>
+        <a href="/trips" class="navbar-link">Trips</a>
+        <a href="/activities" class="navbar-link">Activities</a>
+        <a href="#" class="navbar-link">Bucket</a>
+        <a href="#" class="navbar-link">Stats</a>
+      </div>
+    </div>
+
+    <div class="navbar-right">
+      <div class="user-menu" id="user-menu">
+        <div class="user-avatar" id="user-avatar"></div>
+        <div class="user-info">
+          <span class="user-display-name" id="user-display-name">—</span>
+          <span class="user-username" id="user-username">—</span>
+        </div>
+        <svg class="chevron" id="menu-chevron" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <div class="user-dropdown" id="user-dropdown" hidden>
+        <a href="/settings" class="dropdown-item">Settings</a>
+        <hr class="dropdown-divider" />
+        <button class="dropdown-item dropdown-item-danger" id="logout-btn">Log out</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="settings-page">
+    <aside class="settings-sidebar">
+      <nav>
+        <ul>
+          <li><a href="#section-account" class="section-link">Account</a></li>
+          <li><a href="#section-security" class="section-link">Security</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <section class="settings-card">
+      <div id="section-account">
+      <header class="settings-header">
+        <div>
+          <p class="settings-kicker">Account</p>
+          <h1 class="settings-title">User settings</h1>
+          <p class="settings-subtitle">Update the profile details shown across Roam.</p>
+        </div>
+      </header>
+
+      <form class="settings-form" id="settings-form" novalidate>
+        <div class="field">
+          <label class="field-label" for="settings-username">Username</label>
+          <input class="input" type="text" id="settings-username" autocomplete="off" spellcheck="false" />
+          <p class="field-hint">3–30 characters, letters/numbers/underscores only.</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="settings-display-name">Display name</label>
+          <input class="input" type="text" id="settings-display-name" autocomplete="name" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="settings-bio">Bio</label>
+          <textarea class="textarea" id="settings-bio" rows="4" maxlength="150"></textarea>
+          <p class="field-hint" id="bio-hint">0 / 150</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="country-search">Home country</label>
+          <div class="country-picker" id="country-picker">
+            <input class="input" type="text" id="country-search" placeholder="Search for a country…" autocomplete="off" />
+            <input type="hidden" id="settings-home-country" />
+            <ul class="country-list" id="country-list" hidden></ul>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="settings-avatar">Avatar image</label>
+          <div class="avatar-row">
+            <div class="avatar-preview" id="settings-avatar-preview">—</div>
+            <div class="avatar-inputs">
+              <input class="input" type="file" id="settings-avatar" accept="image/*" />
+              <p class="field-hint">PNG or JPG, up to 5 MB.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="message message-error" id="settings-error"></div>
+        <div class="message message-success" id="settings-success"></div>
+
+        <div class="settings-actions">
+          <button class="btn btn-secondary is-hidden" type="button" id="settings-cancel-btn">Cancel changes</button>
+          <button class="btn btn-primary" type="submit" id="settings-save-btn">Save changes</button>
+          <span class="settings-status" id="settings-status">Changes save instantly.</span>
+        </div>
+      </form>
+      </div>
+
+      <div id="section-security" class="settings-security">
+        <header>
+          <p class="settings-kicker">Security</p>
+          <h2 class="settings-title">Account security</h2>
+          <p class="settings-subtitle">Manage password, sessions, and account deletion.</p>
+        </header>
+
+        <form id="security-change-password" class="settings-form" novalidate>
+          <div class="field">
+            <label class="field-label" for="current-password">Current password</label>
+            <input class="input" type="password" id="current-password" autocomplete="current-password" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="new-password">New password</label>
+            <input class="input" type="password" id="new-password" autocomplete="new-password" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="confirm-password">Confirm new password</label>
+            <input class="input" type="password" id="confirm-password" autocomplete="new-password" />
+          </div>
+          <div class="settings-actions">
+            <button class="btn btn-primary" type="submit" id="change-password-btn">Change password</button>
+            <span class="settings-status" id="security-status"></span>
+          </div>
+        </form>
+
+        <div class="security-panel security-sessions-panel" style="margin-top:16px;">
+          <div>
+            <p class="settings-kicker">Sessions</p>
+            <h3 class="security-panel-title">Log out of all devices</h3>
+            <p class="security-panel-copy">End every active session except this one if you no longer trust a device.</p>
+          </div>
+          <button class="btn btn-secondary" id="logout-all-btn" type="button">Log out of all devices</button>
+        </div>
+
+        <div class="danger-zone" style="margin-top:20px;">
+          <h3>Delete account</h3>
+          <p>Once you delete your account, there is no going back. All your data, photos and profile information will be removed. Please type your <strong>username</strong> to confirm.</p>
+
+          <div class="field" style="margin-top:12px;">
+            <label class="field-label" for="confirm-username">Type your username to confirm</label>
+            <input class="input" type="text" id="confirm-username" placeholder="Enter username to confirm" autocomplete="off" />
+          </div>
+
+          <div class="settings-actions" style="margin-top:12px;">
+            <button class="btn btn-danger" id="delete-account-confirm-btn" type="button" disabled>Delete your account</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="leave-modal" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Leave without saving?</h2>
+        <p>You have unsaved changes in your settings.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" type="button" id="leave-modal-stay">Stay here</button>
+        <button class="btn btn-primary" type="button" id="leave-modal-leave">Leave page</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
