@@ -32,6 +32,7 @@ function populateNavbar(profile) {
   }
 }
 
+
 function formatDateTime(dateStr) {
   if (!dateStr) return "";
   const date = new Date(dateStr);
