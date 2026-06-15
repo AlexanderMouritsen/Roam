@@ -30,6 +30,9 @@ const cookieParser = require("cookie-parser");
 const app  = express();
 const PORT = process.env.PORT || 3000;
 const supabaseOrigin = process.env.SUPABASE_URL ? new URL(process.env.SUPABASE_URL).origin : null;
+const publicOrigin = (process.env.BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null))?.replace(/\/+$/, "");
+
+const localOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
 const connectSrc = ["'self'"];
 if (supabaseOrigin) {
@@ -49,14 +52,23 @@ app.use(helmet({
   },
 }));
 
-app.use(cors({ origin: `http://localhost:${PORT}`, credentials: true }));
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || origin === publicOrigin || localOriginPattern.test(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(cookieParser());
 
 const { requireAuth } = require("./middleware/auth");
 const { createAuthClient } = require("./config/supabase");
 
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
@@ -81,6 +93,10 @@ app.use("/api/stats",     statsRouter);
 
 app.get("/api/geojson/countries", requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, "data", "countries.geojson"));
+});
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 app.get("/confirm", (req, res) => {
@@ -111,6 +127,10 @@ app.get("/activity/:id/edit", requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "activity-edit.html"));
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;

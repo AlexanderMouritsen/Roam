@@ -13,6 +13,22 @@ const COOKIE_OPTIONS = {
   maxAge:   60 * 60 * 1000,
 };
 
+function getBaseUrl(req) {
+  if (process.env.BASE_URL) {
+    return process.env.BASE_URL.replace(/\/+$/, "");
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  const forwardedHost = req.headers["x-forwarded-host"];
+  const forwardedProto = req.headers["x-forwarded-proto"] || "http";
+  const host = forwardedHost || req.headers.host || "localhost:3000";
+
+  return `${forwardedProto}://${host}`;
+}
+
 // POST /api/auth/signup
 
 // Profile fields are passed as metadata in the signUp call.
@@ -32,7 +48,7 @@ router.post("/signup", async (req, res) => {
     email,
     password,
     options: {
-      emailRedirectTo: `${process.env.BASE_URL || "http://localhost:3000"}/confirm`,
+      emailRedirectTo: `${getBaseUrl(req)}/confirm`,
       data: {
         username:     username.trim(),
         display_name: display_name.trim(),
@@ -92,7 +108,7 @@ router.post("/reset-password", async (req, res) => {
   }
 
   try {
-    const redirectTo = `${process.env.BASE_URL || "http://localhost:3000"}/auth.html?mode=recovery`;
+    const redirectTo = `${getBaseUrl(req)}/auth.html?mode=recovery`;
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo,
     });

@@ -23,6 +23,21 @@ Roam er en app for å samle og bevare reiseminner. Målet er å gi brukere et me
 
 > `npm start` er definert i `package.json` og laster miljøvariabler automatisk.
 
+## Vercel
+
+Prosjektet er satt opp for Vercel med en Express-entrypoint i `api/index.js` og rewrites i `vercel.json`.
+
+Legg inn disse miljøvariablene i Vercel-prosjektet:
+
+```
+SUPABASE_URL=din-url
+SUPABASE_ANON_KEY=din-anon-key
+SUPABASE_SERVICE_ROLE_KEY=din-nøkkel
+BASE_URL=https://ditt-domene.vercel.app
+```
+
+`BASE_URL` brukes til bekreftelses- og passord-reset-lenker i e-postene fra Supabase.
+
 ## Supabase i Roam
 
 Roam bruker Supabase som database og autentisering. Her er det Supabase tar seg av:
